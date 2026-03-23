@@ -93,20 +93,41 @@
 
     <!-- PANTALLA DE INSTALACIÓN OBLIGATORIA (PWA) -->
     <div id="install-screen" class="fixed inset-0 z-[99999] bg-white flex flex-col items-center justify-center p-6 text-center hidden">
-        <img src="app.jpg" alt="RutasApp" class="w-32 h-32 rounded-3xl shadow-lg mb-6 object-cover" onerror="this.src='https://cdn-icons-png.flaticon.com/512/854/854878.png'">
-        <h2 class="text-2xl font-black text-imade-dark mb-2">Instala RutasApp</h2>
-        <p class="text-gray-500 mb-8 font-medium px-4 leading-relaxed">Para usar esta aplicación y garantizar que el GPS funcione en segundo plano, debes instalarla en tu dispositivo.</p>
-        <button id="btn-install" class="w-full bg-imade-light text-white font-black py-4 rounded-2xl shadow-xl active:scale-95 transition-transform hidden">
-            <i class="fa-solid fa-download mr-2"></i> Instalar Aplicación
+        <img src="app.jpg" alt="RutasApp" class="w-32 h-32 rounded-3xl shadow-2xl mb-6 object-cover" onerror="this.src='https://cdn-icons-png.flaticon.com/512/854/854878.png'">
+        <h2 class="text-3xl font-black text-imade-dark mb-3">Instala RutasApp</h2>
+        <p class="text-gray-500 mb-8 font-medium px-4 leading-relaxed text-sm">Para continuar y garantizar que el GPS funcione en tiempo real, instala la aplicación dando clic en el botón de abajo.</p>
+        
+        <button id="btn-install" class="w-full max-w-xs bg-imade-light text-white font-black py-4 rounded-2xl shadow-[0_10px_20px_rgba(54,168,225,0.3)] active:scale-95 transition-transform text-lg flex items-center justify-center">
+            <i class="fa-solid fa-download mr-3"></i> Instalar Ahora
         </button>
-        <p id="install-instructions" class="text-sm text-gray-400 hidden mt-4 px-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
-            Toca el menú de tu navegador <i class="fa-solid fa-ellipsis-vertical mx-1"></i> o Compartir <i class="fa-solid fa-arrow-up-from-bracket mx-1"></i> y selecciona <br><strong class="text-gray-700 mt-2 block">"Agregar a la pantalla de inicio"</strong>.
-        </p>
-        <div id="installed-msg" class="hidden flex-col items-center w-full">
+        
+        <div id="install-instructions" class="hidden mt-6 bg-blue-50 border border-blue-100 p-5 rounded-3xl w-full max-w-xs">
+            <p class="text-sm text-imade-dark font-semibold leading-relaxed">
+                <i class="fa-brands fa-apple text-xl mb-2 block"></i>
+                En tu iPhone, toca el ícono de Compartir <i class="fa-solid fa-arrow-up-from-bracket mx-1 text-blue-500"></i> abajo y selecciona <br><strong>"Agregar a la pantalla de inicio" <i class="fa-solid fa-square-plus text-blue-500 ml-1"></i></strong>.
+            </p>
+        </div>
+
+        <div id="installed-msg" class="hidden flex-col items-center w-full max-w-xs">
             <div class="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mb-4 text-4xl shadow-inner"><i class="fa-solid fa-check"></i></div>
             <p class="text-imade-dark font-black text-xl">¡Instalación exitosa!</p>
-            <p class="text-gray-500 text-sm mt-3 font-medium px-4">Esta pestaña ya no sirve. Ciérrala y abre la aplicación directamente desde la pantalla de inicio de tu celular.</p>
+            <p class="text-gray-500 text-sm mt-3 font-medium px-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">Esta pestaña ya no sirve. Ciérrala y abre la aplicación directamente desde la pantalla de inicio de tu celular.</p>
         </div>
+    </div>
+
+    <!-- PANTALLA DE S.O.S ACTIVO (Para quien lo inicia) -->
+    <div id="sos-active-modal" class="fixed inset-0 bg-red-900/95 z-[99990] hidden flex-col items-center justify-center backdrop-blur-md px-6 text-center">
+        <div class="w-32 h-32 bg-red-500 rounded-full flex items-center justify-center mb-6 animate-pulse shadow-[0_0_50px_rgba(239,68,68,0.6)]">
+            <i class="fa-solid fa-triangle-exclamation text-6xl text-white"></i>
+        </div>
+        <h2 class="text-3xl font-black text-white mb-2 tracking-tight">S.O.S ACTIVO</h2>
+        <p class="text-red-200 text-sm font-medium mb-8">Tu alerta de emergencia está sonando en toda la flota y tu ubicación está parpadeando en el mapa.</p>
+        
+        <div class="text-7xl font-black text-white mb-10 drop-shadow-lg font-mono" id="sos-timer">30</div>
+        
+        <button onclick="cancelSOS()" class="w-full max-w-xs bg-white text-red-600 font-black py-4 rounded-full shadow-2xl active:scale-95 transition-transform text-lg border border-red-100">
+            Desactivar Alerta
+        </button>
     </div>
 
     <!-- Firebase Real-time Integration -->
@@ -166,17 +187,40 @@
                 onSnapshot(pilotsCol, (snapshot) => {
                     const pilots = [];
                     const now = Date.now();
-                    let anySOS = false; // Detectar SOS global
+                    let anySOS = false; 
+                    let activeSosPilots = [];
+
                     snapshot.forEach(doc => {
                         const data = doc.data();
                         // Solo mostrar pilotos que hayan actualizado en la última hora (para no saturar)
                         if (now - data.timestamp < 3600000) { 
                            pilots.push({...data, id: doc.id});
-                           if(data.status === 'SOS') anySOS = true;
+                           if(data.status === 'SOS' && doc.id !== window.currentUser.uid) {
+                               anySOS = true;
+                               activeSosPilots.push({...data, id: doc.id});
+                           }
                         }
                     });
+
                     if (window.renderPilotsMap) window.renderPilotsMap(pilots);
-                    if (window.manageSOSAudio) window.manageSOSAudio(anySOS); // Activar/desactivar sonido
+                    if (window.manageSOSAudio) window.manageSOSAudio(anySOS); 
+
+                    // LÓGICA DE NOTIFICACIONES S.O.S (Solo lanza si es una nueva emergencia)
+                    if (anySOS && !window.wasSosActive && activeSosPilots.length > 0) {
+                        let sosPilot = activeSosPilots[0];
+                        let dist = window.calculateDistance ? window.calculateDistance(window.userLat, window.userLng, sosPilot.lat, sosPilot.lng) : null;
+                        let distStr = dist ? dist.toFixed(1) + ' km' : 'distancia desconocida';
+                        
+                        if (Notification.permission === 'granted') {
+                            new Notification("🚨 ¡ALERTA S.O.S! 🚨", {
+                                body: `El piloto ${sosPilot.name} necesita apoyo urgente. Se encuentra a ${distStr}.`,
+                                icon: "app.jpg",
+                                vibrate: [200, 100, 200, 100, 200, 100, 200]
+                            });
+                        }
+                    }
+                    window.wasSosActive = anySOS;
+
                 }, (error) => console.error("Error en radar:", error));
             }
 
@@ -194,24 +238,8 @@
             });
 
         } else {
-            // BACKUP: Si la app está en Github Pages y no han puesto Firebase, 
-            // simularemos tu propia posición para que el mapa funcione visualmente.
             window.updatePilotLocation = async (lat, lng, status) => { /* Silencioso */ };
-            window.startPilotsListener = () => {
-                setInterval(() => {
-                    if (window.userLat && window.userLng && window.renderPilotsMap) {
-                        const myName = localStorage.getItem('imade_pilot_name') || "Piloto Local";
-                        window.renderPilotsMap([{
-                            id: 'local-user', 
-                            name: myName + " (Tú)", 
-                            lat: window.userLat, 
-                            lng: window.userLng, 
-                            status: 'activo'
-                        }]);
-                    }
-                }, 3000);
-            };
-            setTimeout(() => window.startPilotsListener(), 1500);
+            window.startPilotsListener = () => { /* Silencioso */ };
         }
     </script>
 
@@ -362,11 +390,11 @@
                 </div>
             </div>
 
-            <!-- PANTALLA 4: REGISTRAR CLIENTE -->
+            <!-- PANTALLA 4: REGISTRAR CLIENTE (NUEVO FORMATO EXACTO) -->
             <div id="screen-register" class="screen hidden w-full h-full flex flex-col bg-imade-bg">
                 <div class="p-5 bg-white shadow-sm shrink-0 border-b border-gray-100">
                     <h2 class="text-2xl font-black text-imade-dark tracking-tight">Registrar</h2>
-                    <p class="text-xs text-gray-500 mt-1 font-medium">Captura automática de coordenadas</p>
+                    <p class="text-xs text-gray-500 mt-1 font-medium">Ubicación y hora se guardan solos</p>
                 </div>
                 <div class="flex-1 overflow-y-auto p-5 no-scrollbar pb-6">
                     <form id="register-form" onsubmit="saveClient(event)" class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 space-y-6">
@@ -378,10 +406,17 @@
                             </div>
                         </div>
                         <div class="space-y-4">
+                            <!-- Piloto (Automático) -->
+                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Piloto (Automático)</label><input type="text" id="reg-pilot" disabled class="w-full px-4 py-4 bg-gray-100 rounded-2xl border border-transparent text-sm font-bold text-gray-500 shadow-inner"></div>
+                            
+                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Nombre de Cliente</label><input type="text" id="reg-name" required placeholder="Ej. Distribuidora Central" class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800"></div>
                             <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Código de Cliente</label><input type="text" id="reg-code" required placeholder="Ej. 1234" class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800"></div>
-                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Nombre Comercial</label><input type="text" id="reg-name" required placeholder="Negocio..." class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800"></div>
                             <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Teléfono</label><input type="tel" id="reg-phone" placeholder="Ej. 5555-5555" class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800"></div>
-                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Dirección / Referencia</label><textarea id="reg-address" rows="2" placeholder="Municipio..." class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm resize-none font-bold text-gray-800"></textarea></div>
+                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Departamento</label><input type="text" id="reg-depto" required placeholder="Ej. Guatemala" class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800"></div>
+                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Municipio / Dirección</label><textarea id="reg-address" required rows="2" placeholder="Ej. Mixco, Zona 1..." class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm resize-none font-bold text-gray-800"></textarea></div>
+                            
+                            <!-- País (Automático) -->
+                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">País (Por Defecto)</label><input type="text" id="reg-pais" value="Guatemala" disabled class="w-full px-4 py-4 bg-gray-100 rounded-2xl border border-transparent text-sm font-bold text-gray-500 shadow-inner"></div>
                         </div>
                         <div class="pt-2"><button type="submit" id="btn-save" class="w-full bg-imade-dark text-white font-black py-4 rounded-2xl shadow-xl shadow-imade-dark/30 hover:bg-blue-900 transition-all active:scale-95 disabled:opacity-50 flex justify-center items-center"><i class="fa-solid fa-cloud-arrow-up mr-2 text-lg"></i> Guardar Cliente</button></div>
                     </form>
@@ -523,7 +558,7 @@
                         osc.type = 'square';
                         osc.frequency.setValueAtTime(800, audioCtx.currentTime);
                         osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.2);
-                        gain.gain.setValueAtTime(0.15, audioCtx.currentTime); // Volumen de la alarma
+                        gain.gain.setValueAtTime(1.5, audioCtx.currentTime); // Volumen de la alarma
                         osc.connect(gain);
                         gain.connect(audioCtx.destination);
                         osc.start();
@@ -560,15 +595,12 @@
                         document.getElementById('installed-msg').classList.remove('hidden');
                     }
                     deferredPrompt = null;
-                }
-            });
-
-            // Si el dispositivo no soporta el botón de instalación directo (ej. iOS Safari)
-            setTimeout(() => {
-                if(!deferredPrompt && document.getElementById('installed-msg').classList.contains('hidden')) {
+                } else {
+                    // Si el dispositivo es Apple (bloquea el prompt automático), forzamos mostrar las instrucciones.
+                    document.getElementById('btn-install').classList.add('hidden');
                     document.getElementById('install-instructions').classList.remove('hidden');
                 }
-            }, 1000);
+            });
 
             window.addEventListener('appinstalled', () => {
                 document.getElementById('btn-install').classList.add('hidden');
@@ -604,6 +636,9 @@
                 localStorage.setItem('imade_pilot_name', name);
                 document.getElementById('name-modal').classList.add('hidden');
                 showToast("¡Turno iniciado!", "Bienvenido " + name, "fa-user-check");
+                
+                // Pedir permisos de notificación de inmediato
+                if ("Notification" in window) { Notification.requestPermission(); }
                 
                 // Desbloquear audio contexto al interactuar para que suene el SOS
                 if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -645,6 +680,10 @@
 
             if (tabId === 'search') filterClients(); 
             
+            if (tabId === 'register') {
+                document.getElementById('reg-pilot').value = localStorage.getItem('imade_pilot_name') || 'Anónimo';
+            }
+            
             // CORRECCIÓN DEL MAPA GRIS
             if (tabId === 'pilots') {
                 if (!pilotsMap && window.renderPilotsMap) {
@@ -656,21 +695,44 @@
             }
         }
 
-        // Lógica de SOS
+        // === LÓGICA DE SOS INICIADOR ===
+        window.calculateDistance = function(lat1, lon1, lat2, lon2) {
+            if(!lat1 || !lon1 || !lat2 || !lon2) return null;
+            const R = 6371; 
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        let mySosInterval;
         function triggerSOS() {
-            showToast("¡ALERTA S.O.S ENVIADA!", "Central y demás pilotos notificados", "fa-triangle-exclamation", "text-red-500", "bg-red-50 border-red-200");
+            if (!window.userLat || !window.userLng) { showToast("Error", "GPS no disponible para S.O.S"); return; }
             
-            if (window.updatePilotLocation && window.userLat && window.userLng) {
-                window.updatePilotLocation(window.userLat, window.userLng, 'SOS');
-            }
+            if (window.updatePilotLocation) window.updatePilotLocation(window.userLat, window.userLng, 'SOS');
             
-            // Regresar a activo después de 15 segundos para el demo
-            setTimeout(() => {
-                if(window.updatePilotLocation && window.userLat && window.userLng) {
-                   window.updatePilotLocation(window.userLat, window.userLng, 'activo');
-                   showToast("Alerta S.O.S cancelada", "Tu estado volvió a activo", "fa-check-circle");
+            document.getElementById('sos-active-modal').classList.remove('hidden');
+            let timeLeft = 15;
+            document.getElementById('sos-timer').innerText = timeLeft;
+            
+            clearInterval(mySosInterval);
+            mySosInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('sos-timer').innerText = timeLeft;
+                if(timeLeft <= 0) {
+                    cancelSOS();
                 }
-            }, 15000);
+            }, 1000);
+        }
+
+        function cancelSOS() {
+            clearInterval(mySosInterval);
+            document.getElementById('sos-active-modal').classList.add('hidden');
+            if (window.updatePilotLocation && window.userLat && window.userLng) {
+                window.updatePilotLocation(window.userLat, window.userLng, 'activo');
+            }
+            showToast("S.O.S Finalizado", "Tu estado volvió a activo", "fa-check-circle");
         }
 
         function closeMap() {
@@ -713,8 +775,10 @@
                             pilotIcon.className = `w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 transition-colors bg-green-50 text-green-500`;
                         }
 
-                        // Actualizar FireBase en vivo
-                        if(window.updatePilotLocation) window.updatePilotLocation(window.userLat, window.userLng, 'activo');
+                        // Actualizar FireBase en vivo si no estamos en SOS local
+                        if(window.updatePilotLocation && document.getElementById('sos-active-modal').classList.contains('hidden')){
+                            window.updatePilotLocation(window.userLat, window.userLng, 'activo');
+                        }
 
                         const locStatus = document.getElementById('location-status');
                         if (locStatus) {
@@ -751,66 +815,9 @@
             }
         }
 
-        // MAPA EN VIVO DE PILOTOS (FLOTA)
-        window.renderPilotsMap = function(pilots = []) {
-            if (!pilotsMap) {
-                let startLat = window.userLat || 14.6349;
-                let startLng = window.userLng || -90.5069;
-                pilotsMap = L.map('map-pilots', { zoomControl: false }).setView([startLat, startLng], 12);
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(pilotsMap);
-            }
-            
-            // Limpiar marcadores viejos
-            const currentIds = pilots.map(p => p.id);
-            for (const id in pilotMarkers) {
-                if (!currentIds.includes(id)) {
-                    pilotsMap.removeLayer(pilotMarkers[id]);
-                    delete pilotMarkers[id];
-                }
-            }
-
-            // Actualizar o añadir marcadores
-            pilots.forEach(pilot => {
-                if (pilot.status === 'inactivo' || pilot.lat === 0) return; // No mostrar inactivos
-
-                const isSOS = pilot.status === 'SOS';
-                const color = isSOS ? '#ef4444' : '#36a8e1';
-                const pulseClass = isSOS ? 'sos-danger-blink' : '';
-                const iconCls = isSOS ? 'fa-triangle-exclamation' : 'fa-truck-fast';
-
-                const iconHtml = `
-                    <div class="${pulseClass}" style='background-color:${color}; width:30px; height:30px; border-radius:50%; border:3px solid white; box-shadow:0 4px 10px rgba(0,0,0,0.4); display:flex; justify-content:center; align-items:center; transition: all 0.3s;'>
-                        <i class='fa-solid ${iconCls}' style='color:white; font-size:12px;'></i>
-                    </div>
-                    <div style="background: white; font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 10px; margin-top: 5px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.15); white-space: nowrap; transform: translateX(-25%); border: 1px solid #f1f5f9; color: #1e293b; position:relative; z-index:999;">
-                        ${pilot.name} ${isSOS ? '<span style="color:red; animation: ping 1s infinite;">🚨</span>' : ''}
-                    </div>
-                `;
-
-                const icon = L.divIcon({ className: 'custom-div-icon', html: iconHtml, iconSize: [30, 30], iconAnchor: [15, 15] });
-
-                if (pilotMarkers[pilot.id]) {
-                    pilotMarkers[pilot.id].setLatLng([pilot.lat, pilot.lng]);
-                    pilotMarkers[pilot.id].setIcon(icon);
-                } else {
-                    pilotMarkers[pilot.id] = L.marker([pilot.lat, pilot.lng], { icon }).addTo(pilotsMap);
-                }
-            });
-        }
-
         // ==========================================
         // FUNCIONES DE CLIENTES (Buscador, registro...)
         // ==========================================
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            if(!lat1 || !lon1 || !lat2 || !lon2) return null;
-            const R = 6371; 
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
-        }
-
         function setupSearchInput() {
             const input = document.getElementById('search-input');
             const clearBtn = document.getElementById('clear-search-btn');
@@ -870,7 +877,7 @@
         function filterClients() {
             const term = document.getElementById('search-input').value.toLowerCase();
             let filtered = clients.filter(c => (c.nombre && c.nombre.toLowerCase().includes(term)) || (c.codigo && String(c.codigo).toLowerCase().includes(term)));
-            if (window.userLat && window.userLng) { filtered = filtered.map(c => { c.distancia = calculateDistance(window.userLat, window.userLng, c.lat, c.lng); return c; }); } 
+            if (window.userLat && window.userLng) { filtered = filtered.map(c => { c.distancia = window.calculateDistance(window.userLat, window.userLng, c.lat, c.lng); return c; }); } 
             else { filtered = filtered.map(c => { c.distancia = null; return c; }); }
 
             if (currentSortMethod === 'distance') { filtered.sort((a, b) => { if (a.distancia === null) return 1; if (b.distancia === null) return -1; return a.distancia - b.distancia; }); } 
@@ -932,22 +939,23 @@
             
             // NUEVO FORMATO EXACTO PARA GOOGLE SHEETS
             const newClient = {
-                id: crypto.randomUUID(),
-                piloto: localStorage.getItem('imade_pilot_name') || "Piloto App",
+                piloto: document.getElementById('reg-pilot').value,
                 nombreCliente: document.getElementById('reg-name').value,
                 codigoCliente: document.getElementById('reg-code').value,
-                telefono: document.getElementById('reg-phone').value,
-                direccion: document.getElementById('reg-address').value,
-                fecha: new Date().toLocaleString('es-GT'),
-                ubicacion: `${window.userLat}, ${window.userLng}`
+                departamento: document.getElementById('reg-depto').value,
+                municipio: document.getElementById('reg-address').value,
+                pais: "Guatemala",
+                lat: window.userLat,
+                lng: window.userLng,
+                fecha: new Date().toLocaleString('es-GT')
             };
 
             // Guardado local (lo adaptamos para que la app no falle)
             clients.unshift({
                 codigo: newClient.codigoCliente,
                 nombre: newClient.nombreCliente,
-                telefono: newClient.telefono,
-                direccion: newClient.direccion,
+                telefono: document.getElementById('reg-phone').value,
+                direccion: newClient.municipio + ", " + newClient.departamento,
                 lat: window.userLat,
                 lng: window.userLng,
                 fecha: newClient.fecha
