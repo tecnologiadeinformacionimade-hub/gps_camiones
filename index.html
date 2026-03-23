@@ -83,9 +83,31 @@
 
         .pb-safe { padding-bottom: env(safe-area-inset-bottom, 16px); }
         .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+        
+        /* Animación agresiva para SOS */
+        @keyframes sosBlink { 0%, 100% { background-color: #ef4444; transform: scale(1); } 50% { background-color: #991b1b; transform: scale(1.2); } }
+        .sos-danger-blink { animation: sosBlink 0.4s infinite; border: 4px solid white !important; }
     </style>
 </head>
-<body class="text-gray-800 antialiased h-screen overflow-hidden flex justify-center">
+<body class="text-gray-800 antialiased h-[100dvh] w-full overflow-hidden flex justify-center bg-gray-100">
+
+    <!-- PANTALLA DE INSTALACIÓN OBLIGATORIA (PWA) -->
+    <div id="install-screen" class="fixed inset-0 z-[99999] bg-white flex flex-col items-center justify-center p-6 text-center hidden">
+        <img src="app.jpg" alt="RutasApp" class="w-32 h-32 rounded-3xl shadow-lg mb-6 object-cover" onerror="this.src='https://cdn-icons-png.flaticon.com/512/854/854878.png'">
+        <h2 class="text-2xl font-black text-imade-dark mb-2">Instala RutasApp</h2>
+        <p class="text-gray-500 mb-8 font-medium px-4 leading-relaxed">Para usar esta aplicación y garantizar que el GPS funcione en segundo plano, debes instalarla en tu dispositivo.</p>
+        <button id="btn-install" class="w-full bg-imade-light text-white font-black py-4 rounded-2xl shadow-xl active:scale-95 transition-transform hidden">
+            <i class="fa-solid fa-download mr-2"></i> Instalar Aplicación
+        </button>
+        <p id="install-instructions" class="text-sm text-gray-400 hidden mt-4 px-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+            Toca el menú de tu navegador <i class="fa-solid fa-ellipsis-vertical mx-1"></i> o Compartir <i class="fa-solid fa-arrow-up-from-bracket mx-1"></i> y selecciona <br><strong class="text-gray-700 mt-2 block">"Agregar a la pantalla de inicio"</strong>.
+        </p>
+        <div id="installed-msg" class="hidden flex-col items-center w-full">
+            <div class="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mb-4 text-4xl shadow-inner"><i class="fa-solid fa-check"></i></div>
+            <p class="text-imade-dark font-black text-xl">¡Instalación exitosa!</p>
+            <p class="text-gray-500 text-sm mt-3 font-medium px-4">Esta pestaña ya no sirve. Ciérrala y abre la aplicación directamente desde la pantalla de inicio de tu celular.</p>
+        </div>
+    </div>
 
     <!-- Firebase Real-time Integration -->
     <script type="module">
@@ -144,16 +166,33 @@
                 onSnapshot(pilotsCol, (snapshot) => {
                     const pilots = [];
                     const now = Date.now();
+                    let anySOS = false; // Detectar SOS global
                     snapshot.forEach(doc => {
                         const data = doc.data();
                         // Solo mostrar pilotos que hayan actualizado en la última hora (para no saturar)
                         if (now - data.timestamp < 3600000) { 
                            pilots.push({...data, id: doc.id});
+                           if(data.status === 'SOS') anySOS = true;
                         }
                     });
                     if (window.renderPilotsMap) window.renderPilotsMap(pilots);
+                    if (window.manageSOSAudio) window.manageSOSAudio(anySOS); // Activar/desactivar sonido
                 }, (error) => console.error("Error en radar:", error));
             }
+
+            // APAGAR UBICACIÓN SI SE CIERRA LA PESTAÑA O SE MINIMIZA
+            document.addEventListener("visibilitychange", () => {
+                if (document.visibilityState === 'hidden') {
+                    if(window.updatePilotLocation && window.userLat && window.userLng) {
+                        window.updatePilotLocation(window.userLat, window.userLng, 'inactivo');
+                    }
+                } else {
+                    if(window.updatePilotLocation && window.userLat && window.userLng && localStorage.getItem('imade_pilot_name')) {
+                        window.updatePilotLocation(window.userLat, window.userLng, 'activo');
+                    }
+                }
+            });
+
         } else {
             // BACKUP: Si la app está en Github Pages y no han puesto Firebase, 
             // simularemos tu propia posición para que el mapa funcione visualmente.
@@ -201,9 +240,7 @@
             <div id="screen-home" class="screen w-full h-full flex flex-col p-6 overflow-y-auto no-scrollbar">
                 
                 <div class="flex flex-col items-center justify-center mt-2 mb-6">
-                    <div class="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center mb-4 border border-blue-100 shadow-sm text-imade-dark text-3xl">
-                        <i class="fa-solid fa-truck-fast"></i>
-                    </div>
+                    <img src="logo.png" alt="Grupo Imade" class="h-20 object-contain mb-4 filter drop-shadow-sm">
                     <h2 class="text-2xl font-black text-imade-dark text-center tracking-tight">¡Bienvenido!</h2>
                 </div>
                 
@@ -385,13 +422,13 @@
                 <span class="text-[10px] font-extrabold uppercase">Registrar</span>
             </button>
             <button onclick="switchTab('pilots')" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 text-gray-400 hover:text-imade-dark transition-colors relative">
-                <i class="fa-solid fa-motorcycle text-xl mb-0.5 relative">
+                <i class="fa-solid fa-truck-fast text-xl mb-0.5 relative">
                     <span class="absolute -top-1 -right-2 flex h-3 w-3">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-imade-light opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-3 w-3 bg-imade-light border border-white"></span>
                     </span>
                 </i>
-                <span class="text-[10px] font-extrabold uppercase text-imade-light">Pilotos</span>
+                <span class="text-[10px] font-extrabold uppercase text-imade-light">Flota</span>
             </button>
         </nav>
 
@@ -470,6 +507,76 @@
         let pilotsMap = null;
         let pilotMarkers = {};
 
+        // === LÓGICA DE ALARMA S.O.S ===
+        let sosInterval;
+        let isSosPlaying = false;
+        let audioCtx = null;
+        window.manageSOSAudio = function(anySOS) {
+            if (anySOS && !isSosPlaying) {
+                isSosPlaying = true;
+                if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if(audioCtx.state === 'suspended') audioCtx.resume();
+                sosInterval = setInterval(() => {
+                    try {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                        osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.2);
+                        gain.gain.setValueAtTime(0.15, audioCtx.currentTime); // Volumen de la alarma
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start();
+                        osc.stop(audioCtx.currentTime + 0.4);
+                    } catch(e) {}
+                }, 500);
+            } else if (!anySOS && isSosPlaying) {
+                isSosPlaying = false;
+                clearInterval(sosInterval);
+            }
+        };
+
+        // === PWA & RESTRICCIÓN WEB ===
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        let deferredPrompt;
+
+        if (!isStandalone) {
+            document.getElementById('app').classList.add('hidden');
+            document.getElementById('install-screen').classList.remove('hidden');
+
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                document.getElementById('btn-install').classList.remove('hidden');
+            });
+
+            document.getElementById('btn-install').addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        document.getElementById('btn-install').classList.add('hidden');
+                        document.getElementById('install-instructions').classList.add('hidden');
+                        document.getElementById('installed-msg').classList.remove('hidden');
+                    }
+                    deferredPrompt = null;
+                }
+            });
+
+            // Si el dispositivo no soporta el botón de instalación directo (ej. iOS Safari)
+            setTimeout(() => {
+                if(!deferredPrompt && document.getElementById('installed-msg').classList.contains('hidden')) {
+                    document.getElementById('install-instructions').classList.remove('hidden');
+                }
+            }, 1000);
+
+            window.addEventListener('appinstalled', () => {
+                document.getElementById('btn-install').classList.add('hidden');
+                document.getElementById('install-instructions').classList.add('hidden');
+                document.getElementById('installed-msg').classList.remove('hidden');
+            });
+        }
+
         const mockData = [
             { codigo: '169', nombre: 'Jersson Ariel Ramirez', telefono: '', direccion: 'Gualán, Zacapa', lat: 15.115577, lng: -89.354512 },
             { codigo: '642', nombre: 'Victoriano Sulugui', telefono: '', direccion: 'Totonicapán', lat: 14.826953, lng: -91.218808 },
@@ -497,6 +604,11 @@
                 localStorage.setItem('imade_pilot_name', name);
                 document.getElementById('name-modal').classList.add('hidden');
                 showToast("¡Turno iniciado!", "Bienvenido " + name, "fa-user-check");
+                
+                // Desbloquear audio contexto al interactuar para que suene el SOS
+                if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if(audioCtx.state === 'suspended') audioCtx.resume();
+
                 if (window.updatePilotLocation && window.userLat && window.userLng) {
                     window.updatePilotLocation(window.userLat, window.userLng, 'activo');
                 }
@@ -663,15 +775,15 @@
 
                 const isSOS = pilot.status === 'SOS';
                 const color = isSOS ? '#ef4444' : '#36a8e1';
-                const pulse = isSOS ? 'animate-pulse' : '';
-                const iconCls = isSOS ? 'fa-triangle-exclamation' : 'fa-motorcycle';
+                const pulseClass = isSOS ? 'sos-danger-blink' : '';
+                const iconCls = isSOS ? 'fa-triangle-exclamation' : 'fa-truck-fast';
 
                 const iconHtml = `
-                    <div class="${pulse}" style='background-color:${color}; width:30px; height:30px; border-radius:50%; border:3px solid white; box-shadow:0 4px 10px rgba(0,0,0,0.4); display:flex; justify-content:center; align-items:center;'>
+                    <div class="${pulseClass}" style='background-color:${color}; width:30px; height:30px; border-radius:50%; border:3px solid white; box-shadow:0 4px 10px rgba(0,0,0,0.4); display:flex; justify-content:center; align-items:center; transition: all 0.3s;'>
                         <i class='fa-solid ${iconCls}' style='color:white; font-size:12px;'></i>
                     </div>
-                    <div style="background: white; font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 10px; margin-top: 5px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.15); white-space: nowrap; transform: translateX(-25%); border: 1px solid #f1f5f9; color: #1e293b;">
-                        ${pilot.name} ${isSOS ? '<span style="color:red">!</span>' : ''}
+                    <div style="background: white; font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 10px; margin-top: 5px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.15); white-space: nowrap; transform: translateX(-25%); border: 1px solid #f1f5f9; color: #1e293b; position:relative; z-index:999;">
+                        ${pilot.name} ${isSOS ? '<span style="color:red; animation: ping 1s infinite;">🚨</span>' : ''}
                     </div>
                 `;
 
@@ -817,8 +929,31 @@
             e.preventDefault();
             if (!window.userLat || !window.userLng) { openGpsModal(); return; }
             const btnSave = document.getElementById('btn-save'); btnSave.disabled = true; btnSave.innerHTML = '<div class="loader mr-2 border-white border-t-transparent w-5 h-5 border-2"></div> Subiendo...';
-            const newClient = { codigo: document.getElementById('reg-code').value, nombre: document.getElementById('reg-name').value, telefono: document.getElementById('reg-phone').value, direccion: document.getElementById('reg-address').value, lat: window.userLat, lng: window.userLng, fecha: new Date().toLocaleString() };
-            clients.unshift(newClient); saveToLocalStorage();
+            
+            // NUEVO FORMATO EXACTO PARA GOOGLE SHEETS
+            const newClient = {
+                id: crypto.randomUUID(),
+                piloto: localStorage.getItem('imade_pilot_name') || "Piloto App",
+                nombreCliente: document.getElementById('reg-name').value,
+                codigoCliente: document.getElementById('reg-code').value,
+                telefono: document.getElementById('reg-phone').value,
+                direccion: document.getElementById('reg-address').value,
+                fecha: new Date().toLocaleString('es-GT'),
+                ubicacion: `${window.userLat}, ${window.userLng}`
+            };
+
+            // Guardado local (lo adaptamos para que la app no falle)
+            clients.unshift({
+                codigo: newClient.codigoCliente,
+                nombre: newClient.nombreCliente,
+                telefono: newClient.telefono,
+                direccion: newClient.direccion,
+                lat: window.userLat,
+                lng: window.userLng,
+                fecha: newClient.fecha
+            });
+            saveToLocalStorage();
+
             try { await fetch(GOOGLE_APP_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newClient) }); } catch (err) {}
             setTimeout(() => { showToast("¡Éxito!", "Cliente registrado exitosamente.", "fa-check"); document.getElementById('register-form').reset(); btnSave.disabled = false; btnSave.innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-2 text-lg"></i> Guardar Cliente'; switchTab('home'); }, 800);
         }
