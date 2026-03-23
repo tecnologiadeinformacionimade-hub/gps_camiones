@@ -150,6 +150,9 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // Global variable for fallback map injection
+        window.latestPilots = [];
+
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'rutas-imade-pro';
         const configStr = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
         
@@ -176,28 +179,47 @@
             window.firebaseDb = db;
             window.firebaseAppId = appId;
 
-            const initAuth = async () => { await signInAnonymously(auth); };
+            const initAuth = async () => { 
+                try {
+                    await signInAnonymously(auth); 
+                } catch(error) {
+                    console.error("Error Auth Firebase:", error);
+                    // ALERTA DE ERROR SI OLVIDÓ EL PASO 3 DE FIREBASE
+                    setTimeout(() => {
+                        showToast("⚠️ Falta un paso en Firebase", "Ve a tu proyecto > Authentication > y Activa el método 'Anónimo'.", "fa-triangle-exclamation", "text-red-500", "bg-red-50 border-red-200");
+                    }, 2000);
+                }
+            };
             initAuth();
 
             onAuthStateChanged(auth, (user) => {
                 if (user) {
                     window.currentUser = user;
                     window.startPilotsListener();
+                    // Intentar guardar su ubicación inmediatamente después de autenticarse
+                    if (window.userLat && window.userLng) {
+                        window.updatePilotLocation(window.userLat, window.userLng, 'activo');
+                    }
                 }
             });
 
             window.updatePilotLocation = async (lat, lng, status) => {
                 if(!window.currentUser || !window.firebaseDb) return;
-                const pilotRef = doc(window.firebaseDb, 'artifacts', window.firebaseAppId, 'public', 'data', 'pilotos', window.currentUser.uid);
-                await setDoc(pilotRef, {
-                    lat, lng, status,
-                    name: localStorage.getItem('imade_pilot_name') || "Piloto Anónimo",
-                    timestamp: Date.now()
-                });
+                try {
+                    const pilotRef = doc(window.firebaseDb, 'artifacts', window.firebaseAppId, 'public', 'data', 'pilotos', window.currentUser.uid);
+                    await setDoc(pilotRef, {
+                        lat, lng, status,
+                        name: localStorage.getItem('imade_pilot_name') || "Piloto Anónimo",
+                        timestamp: Date.now()
+                    });
+                } catch(error) {
+                    console.error("Error al escribir en la base de datos:", error);
+                }
             };
 
             window.startPilotsListener = () => {
                 const pilotsCol = collection(window.firebaseDb, 'artifacts', window.firebaseAppId, 'public', 'data', 'pilotos');
+                
                 onSnapshot(pilotsCol, (snapshot) => {
                     const pilots = [];
                     const now = Date.now();
@@ -206,7 +228,7 @@
 
                     snapshot.forEach(doc => {
                         const data = doc.data();
-                        // Solo mostrar pilotos que hayan actualizado en la última hora (para no saturar)
+                        // Solo mostrar pilotos que hayan actualizado en la última hora
                         if (now - data.timestamp < 3600000) { 
                            pilots.push({...data, id: doc.id});
                            if(data.status === 'SOS' && doc.id !== window.currentUser.uid) {
@@ -216,17 +238,17 @@
                         }
                     });
 
-                    // Guardamos la información en global para que el mapa la dibuje cuando se abra la pestaña
+                    // Guardamos la información en global para que el mapa la dibuje
                     window.latestPilots = pilots;
 
-                    // IMPORTANTE: Solo inicializamos Leaflet si la pestaña NO está oculta. Esto soluciona la pantalla gris.
+                    // Dibujar el mapa solo si la pestaña no está oculta
                     if (window.renderPilotsMap && !document.getElementById('screen-pilots').classList.contains('hidden')) {
                         window.renderPilotsMap(pilots);
                     }
                     
                     if (window.manageSOSAudio) window.manageSOSAudio(anySOS); 
 
-                    // LÓGICA DE NOTIFICACIONES S.O.S (Solo lanza si es una nueva emergencia)
+                    // LÓGICA DE NOTIFICACIONES S.O.S
                     if (anySOS && !window.wasSosActive && activeSosPilots.length > 0) {
                         let sosPilot = activeSosPilots[0];
                         let dist = window.calculateDistance ? window.calculateDistance(window.userLat, window.userLng, sosPilot.lat, sosPilot.lng) : null;
@@ -242,7 +264,10 @@
                     }
                     window.wasSosActive = anySOS;
 
-                }, (error) => console.error("Error en radar:", error));
+                }, (error) => {
+                    console.error("Error en radar:", error);
+                    showToast("Error de Firebase", "Tu Base de Datos no permite acceso. Verifica que esté en 'Modo Prueba'.", "fa-database", "text-red-500", "bg-red-50 border-red-200");
+                });
             }
 
             // APAGAR UBICACIÓN SI SE CIERRA LA PESTAÑA O SE MINIMIZA
@@ -404,7 +429,8 @@
                     </button>
                 </div>
                 <div class="flex-1 w-full relative">
-                    <div id="map"></div>
+                    <!-- Absolute inset-0 asegura que tome todo el contenedor para Leaflet -->
+                    <div id="map" class="absolute inset-0"></div>
                     <div id="route-loader" class="absolute inset-0 bg-white/50 backdrop-blur-md z-[400] flex flex-col items-center justify-center hidden">
                         <div class="w-16 h-16 bg-white rounded-3xl shadow-2xl flex items-center justify-center mb-4 border border-blue-50"><div class="loader"></div></div>
                         <p class="font-bold text-imade-dark bg-white/90 backdrop-blur-md px-5 py-2 rounded-full text-sm shadow-sm">Calculando ruta óptima...</p>
@@ -476,7 +502,13 @@
                     </div>
                 </div>
                 <div class="flex-1 w-full relative">
-                    <div id="map-pilots" class="w-full h-full bg-gray-100"></div>
+                    <!-- Absolute inset-0 asegura tamaño al 100% real de la caja padre -->
+                    <div id="map-pilots" class="absolute inset-0 bg-gray-100"></div>
+                    
+                    <!-- Botón para centrar el mapa de vuelta al usuario en caso de perderse -->
+                    <button onclick="window.centerPilotsMap()" class="absolute bottom-6 right-4 z-[400] bg-white/90 backdrop-blur-xl w-14 h-14 rounded-full shadow-lg text-imade-dark hover:bg-gray-50 flex items-center justify-center transition-transform active:scale-90 border border-white/50">
+                        <i class="fa-solid fa-location-crosshairs text-xl"></i>
+                    </button>
                 </div>
             </div>
 
@@ -748,14 +780,24 @@
                 document.getElementById('reg-pilot').value = localStorage.getItem('imade_pilot_name') || 'Anónimo';
             }
             
-            // CORRECCIÓN DEL MAPA GRIS
+            // CORRECCIÓN DEL MAPA GRIS Y CENTRADO AUTOMÁTICO
             if (tabId === 'pilots') {
                 setTimeout(() => {
-                    if (window.renderPilotsMap) {
-                        window.renderPilotsMap(window.latestPilots || []);
+                    if (pilotsMap) pilotsMap.invalidateSize(); 
+                    if (window.renderPilotsMap) window.renderPilotsMap(window.latestPilots || []);
+                    if (pilotsMap && window.userLat && window.userLng) {
+                        pilotsMap.setView([window.userLat, window.userLng], 14);
                     }
-                    if (pilotsMap) pilotsMap.invalidateSize(); // Refresca el tamaño del canvas de Leaflet
-                }, 200);
+                }, 300);
+            }
+        }
+
+        // Botón central para el mapa de pilotos
+        window.centerPilotsMap = function() {
+            if (pilotsMap && window.userLat && window.userLng) {
+                pilotsMap.flyTo([window.userLat, window.userLng], 14, { animate: true, duration: 1 });
+            } else {
+                showToast("Buscando...", "Aún no tenemos tu ubicación GPS.", "fa-location-crosshairs");
             }
         }
 
@@ -844,6 +886,11 @@
                             window.updatePilotLocation(window.userLat, window.userLng, 'activo');
                         }
 
+                        // REDIBUJO FORZADO: Asegura que te veas a ti mismo aunque Firebase falle
+                        if (window.renderPilotsMap && !document.getElementById('screen-pilots').classList.contains('hidden')) {
+                            window.renderPilotsMap(window.latestPilots || []);
+                        }
+
                         const locStatus = document.getElementById('location-status');
                         if (locStatus) {
                             locStatus.className = `p-4 rounded-2xl flex items-center border transition-colors bg-green-50 border-green-200`;
@@ -877,6 +924,71 @@
                     { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
                 );
             }
+        }
+
+        // MAPA EN VIVO DE PILOTOS (FLOTA)
+        window.renderPilotsMap = function(pilots = []) {
+            let startLat = window.userLat || 14.6349;
+            let startLng = window.userLng || -90.5069;
+            
+            if (!pilotsMap) {
+                pilotsMap = L.map('map-pilots', { zoomControl: false }).setView([startLat, startLng], 14);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(pilotsMap);
+            }
+
+            let displayPilots = [...pilots]; // Clonamos para no afectar el caché original
+
+            // INYECTAMOS AL USUARIO LOCAL A LA FUERZA: Garantiza que siempre se vea en el mapa localmente
+            let myId = window.currentUser ? window.currentUser.uid : 'local-user';
+            let iAmInList = displayPilots.find(p => p.id === myId);
+            
+            if (!iAmInList && window.userLat && window.userLng) {
+                let isMySos = !document.getElementById('sos-active-modal').classList.contains('hidden');
+                displayPilots.push({
+                    id: myId,
+                    name: (localStorage.getItem('imade_pilot_name') || "Piloto") + " (Tú)",
+                    lat: window.userLat,
+                    lng: window.userLng,
+                    status: isMySos ? 'SOS' : 'activo'
+                });
+            }
+            
+            // Limpiar marcadores viejos
+            const currentIds = displayPilots.map(p => p.id);
+            for (const id in pilotMarkers) {
+                if (!currentIds.includes(id)) {
+                    pilotsMap.removeLayer(pilotMarkers[id]);
+                    delete pilotMarkers[id];
+                }
+            }
+
+            // Actualizar o añadir marcadores
+            displayPilots.forEach(pilot => {
+                if (pilot.status === 'inactivo' || pilot.lat === 0) return; // No mostrar inactivos
+
+                const isSOS = pilot.status === 'SOS';
+                const color = isSOS ? '#ef4444' : '#36a8e1';
+                const pulseClass = isSOS ? 'sos-danger-blink' : '';
+                const iconCls = isSOS ? 'fa-triangle-exclamation' : 'fa-truck-fast';
+
+                const iconHtml = `
+                    <div class="${pulseClass}" style='background-color:${color}; width:30px; height:30px; border-radius:50%; border:3px solid white; box-shadow:0 4px 10px rgba(0,0,0,0.4); display:flex; justify-content:center; align-items:center; transition: all 0.3s;'>
+                        <i class='fa-solid ${iconCls}' style='color:white; font-size:12px;'></i>
+                    </div>
+                    <div style="background: white; font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 10px; margin-top: 5px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.15); white-space: nowrap; transform: translateX(-25%); border: 1px solid #f1f5f9; color: #1e293b; position:relative; z-index:999;">
+                        ${pilot.name} ${isSOS ? '<span style="color:red; animation: ping 1s infinite;">🚨</span>' : ''}
+                    </div>
+                `;
+
+                const icon = L.divIcon({ className: 'custom-div-icon', html: iconHtml, iconSize: [30, 30], iconAnchor: [15, 15] });
+
+                if (pilotMarkers[pilot.id]) {
+                    pilotMarkers[pilot.id].setLatLng([pilot.lat, pilot.lng]);
+                    pilotMarkers[pilot.id].setIcon(icon);
+                } else {
+                    pilotMarkers[pilot.id] = L.marker([pilot.lat, pilot.lng], { icon }).addTo(pilotsMap);
+                }
+            });
         }
 
         // ==========================================
