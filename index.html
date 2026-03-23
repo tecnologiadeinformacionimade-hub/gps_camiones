@@ -99,6 +99,18 @@
         let firebaseConfig = {};
         try { firebaseConfig = JSON.parse(configStr); } catch(e) {}
 
+        // =====================================================================
+        // ¡CONFIGURACIÓN DE FIREBASE LISTA PARA GITHUB PAGES! 🔥
+        // =====================================================================
+        firebaseConfig = {
+            apiKey: "AIzaSyDCum0Z8j33F2g8aVZxaPIzyWaN1tunSTk",
+            authDomain: "rutasapp-imade.firebaseapp.com",
+            projectId: "rutasapp-imade",
+            storageBucket: "rutasapp-imade.firebasestorage.app",
+            messagingSenderId: "320301869648",
+            appId: "1:320301869648:web:046645830d4b0d036d7f55"
+        };
+
         if (Object.keys(firebaseConfig).length > 0) {
             const app = initializeApp(firebaseConfig);
             const auth = getAuth(app);
@@ -142,6 +154,25 @@
                     if (window.renderPilotsMap) window.renderPilotsMap(pilots);
                 }, (error) => console.error("Error en radar:", error));
             }
+        } else {
+            // BACKUP: Si la app está en Github Pages y no han puesto Firebase, 
+            // simularemos tu propia posición para que el mapa funcione visualmente.
+            window.updatePilotLocation = async (lat, lng, status) => { /* Silencioso */ };
+            window.startPilotsListener = () => {
+                setInterval(() => {
+                    if (window.userLat && window.userLng && window.renderPilotsMap) {
+                        const myName = localStorage.getItem('imade_pilot_name') || "Piloto Local";
+                        window.renderPilotsMap([{
+                            id: 'local-user', 
+                            name: myName + " (Tú)", 
+                            lat: window.userLat, 
+                            lng: window.userLng, 
+                            status: 'activo'
+                        }]);
+                    }
+                }, 3000);
+            };
+            setTimeout(() => window.startPilotsListener(), 1500);
         }
     </script>
 
@@ -170,7 +201,9 @@
             <div id="screen-home" class="screen w-full h-full flex flex-col p-6 overflow-y-auto no-scrollbar">
                 
                 <div class="flex flex-col items-center justify-center mt-2 mb-6">
-                    <img src="logo.png" alt="Grupo Imade" class="h-20 object-contain mb-4 filter drop-shadow-sm">
+                    <div class="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center mb-4 border border-blue-100 shadow-sm text-imade-dark text-3xl">
+                        <i class="fa-solid fa-truck-fast"></i>
+                    </div>
                     <h2 class="text-2xl font-black text-imade-dark text-center tracking-tight">¡Bienvenido!</h2>
                 </div>
                 
@@ -232,7 +265,6 @@
             </div>
 
             <!-- PANTALLA 2: BUSCAR -->
-            <!-- ... (El mismo código de buscar anterior para ahorrar espacio, nada cambia aquí) ... -->
             <div id="screen-search" class="screen hidden w-full h-full flex flex-col bg-imade-bg">
                 <div class="p-5 bg-white/95 backdrop-blur-md shadow-sm shrink-0 z-10 relative border-b border-gray-100">
                     <h2 class="text-2xl font-black text-imade-dark mb-4 tracking-tight">Directorio</h2>
@@ -294,7 +326,6 @@
             </div>
 
             <!-- PANTALLA 4: REGISTRAR CLIENTE -->
-            <!-- ... (El mismo código de registro) ... -->
             <div id="screen-register" class="screen hidden w-full h-full flex flex-col bg-imade-bg">
                 <div class="p-5 bg-white shadow-sm shrink-0 border-b border-gray-100">
                     <h2 class="text-2xl font-black text-imade-dark tracking-tight">Registrar</h2>
@@ -333,13 +364,13 @@
                     </div>
                 </div>
                 <div class="flex-1 w-full relative">
-                    <div id="map-pilots" class="w-full h-full"></div>
+                    <div id="map-pilots" class="w-full h-full bg-gray-100"></div>
                 </div>
             </div>
 
         </div> 
 
-        <!-- BOTTOM NAVIGATION BAR (AHORA CON 4 OPCIONES) -->
+        <!-- BOTTOM NAVIGATION BAR -->
         <nav id="bottom-nav" class="bg-white/90 backdrop-blur-xl border-t border-gray-100 flex justify-around items-center pb-safe z-50 shrink-0 relative px-2">
             <button onclick="switchTab('home')" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 text-imade-dark relative transition-colors">
                 <i class="fa-solid fa-house text-xl mb-0.5"></i>
@@ -426,8 +457,11 @@
         let clients = [];
         let map = null;
         let routingControl = null;
-        let userLat = null;
-        let userLng = null;
+        
+        // Hacer variables globales para que el fallback pueda accederlas
+        window.userLat = null;
+        window.userLng = null;
+        
         let selectedClient = null;
         let currentSortMethod = 'distance'; 
         let gpsAlertShown = false;
@@ -463,15 +497,15 @@
                 localStorage.setItem('imade_pilot_name', name);
                 document.getElementById('name-modal').classList.add('hidden');
                 showToast("¡Turno iniciado!", "Bienvenido " + name, "fa-user-check");
-                if (window.updatePilotLocation && userLat && userLng) {
-                    window.updatePilotLocation(userLat, userLng, 'activo');
+                if (window.updatePilotLocation && window.userLat && window.userLng) {
+                    window.updatePilotLocation(window.userLat, window.userLng, 'activo');
                 }
             } else {
                 alert("Por favor ingresa un nombre válido.");
             }
         }
 
-        // Navegación
+        // Navegación (Aquí está el ajuste del gris)
         function switchTab(tabId) {
             ['home', 'search', 'register', 'map', 'pilots'].forEach(id => {
                 document.getElementById(`screen-${id}`).classList.add('hidden');
@@ -498,9 +532,15 @@
             }
 
             if (tabId === 'search') filterClients(); 
-            if (tabId === 'pilots' && pilotsMap) {
-                // Leaflet necesita redimensionar cuando un div oculto se muestra
-                setTimeout(() => pilotsMap.invalidateSize(), 300);
+            
+            // CORRECCIÓN DEL MAPA GRIS
+            if (tabId === 'pilots') {
+                if (!pilotsMap && window.renderPilotsMap) {
+                    window.renderPilotsMap([]); // Inicializa a la fuerza aunque no haya datos aún
+                }
+                setTimeout(() => {
+                    if (pilotsMap) pilotsMap.invalidateSize(); // Refresca el tamaño del canvas de Leaflet
+                }, 300);
             }
         }
 
@@ -508,14 +548,14 @@
         function triggerSOS() {
             showToast("¡ALERTA S.O.S ENVIADA!", "Central y demás pilotos notificados", "fa-triangle-exclamation", "text-red-500", "bg-red-50 border-red-200");
             
-            if (window.updatePilotLocation && userLat && userLng) {
-                window.updatePilotLocation(userLat, userLng, 'SOS');
+            if (window.updatePilotLocation && window.userLat && window.userLng) {
+                window.updatePilotLocation(window.userLat, window.userLng, 'SOS');
             }
             
             // Regresar a activo después de 15 segundos para el demo
             setTimeout(() => {
-                if(window.updatePilotLocation && userLat && userLng) {
-                   window.updatePilotLocation(userLat, userLng, 'activo');
+                if(window.updatePilotLocation && window.userLat && window.userLng) {
+                   window.updatePilotLocation(window.userLat, window.userLng, 'activo');
                    showToast("Alerta S.O.S cancelada", "Tu estado volvió a activo", "fa-check-circle");
                 }
             }, 15000);
@@ -540,8 +580,8 @@
             if ("geolocation" in navigator) {
                 navigator.geolocation.watchPosition(
                     (position) => {
-                        userLat = position.coords.latitude;
-                        userLng = position.coords.longitude;
+                        window.userLat = position.coords.latitude;
+                        window.userLng = position.coords.longitude;
                         
                         // Estado GPS (Verde)
                         const homeStatus = document.getElementById('home-gps-status');
@@ -562,7 +602,7 @@
                         }
 
                         // Actualizar FireBase en vivo
-                        if(window.updatePilotLocation) window.updatePilotLocation(userLat, userLng, 'activo');
+                        if(window.updatePilotLocation) window.updatePilotLocation(window.userLat, window.userLng, 'activo');
 
                         const locStatus = document.getElementById('location-status');
                         if (locStatus) {
@@ -600,10 +640,10 @@
         }
 
         // MAPA EN VIVO DE PILOTOS (FLOTA)
-        window.renderPilotsMap = function(pilots) {
+        window.renderPilotsMap = function(pilots = []) {
             if (!pilotsMap) {
-                let startLat = userLat || 14.6349;
-                let startLng = userLng || -90.5069;
+                let startLat = window.userLat || 14.6349;
+                let startLng = window.userLng || -90.5069;
                 pilotsMap = L.map('map-pilots', { zoomControl: false }).setView([startLat, startLng], 12);
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(pilotsMap);
             }
@@ -718,7 +758,7 @@
         function filterClients() {
             const term = document.getElementById('search-input').value.toLowerCase();
             let filtered = clients.filter(c => (c.nombre && c.nombre.toLowerCase().includes(term)) || (c.codigo && String(c.codigo).toLowerCase().includes(term)));
-            if (userLat && userLng) { filtered = filtered.map(c => { c.distancia = calculateDistance(userLat, userLng, c.lat, c.lng); return c; }); } 
+            if (window.userLat && window.userLng) { filtered = filtered.map(c => { c.distancia = calculateDistance(window.userLat, window.userLng, c.lat, c.lng); return c; }); } 
             else { filtered = filtered.map(c => { c.distancia = null; return c; }); }
 
             if (currentSortMethod === 'distance') { filtered.sort((a, b) => { if (a.distancia === null) return 1; if (b.distancia === null) return -1; return a.distancia - b.distancia; }); } 
@@ -753,12 +793,12 @@
         }
 
         function initMap() {
-            let startLat = userLat || 14.6349; let startLng = userLng || -90.5069;
+            let startLat = window.userLat || 14.6349; let startLng = window.userLng || -90.5069;
             if (!map) { map = L.map('map', { zoomControl: false }).setView([startLat, startLng], 13); L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map); }
             map.invalidateSize(); drawRoute(startLat, startLng);
         }
 
-        function centerMap() { if (map && userLat && userLng) { map.flyTo([userLat, userLng], 15, { animate: true, duration: 1 }); } else { showToast("Ubicación", "Posición actual no disponible.", "fa-location-dot"); } }
+        function centerMap() { if (map && window.userLat && window.userLng) { map.flyTo([window.userLat, window.userLng], 15, { animate: true, duration: 1 }); } else { showToast("Ubicación", "Posición actual no disponible.", "fa-location-dot"); } }
 
         function drawRoute(startLat, startLng) {
             document.getElementById('route-loader').classList.remove('hidden');
@@ -771,13 +811,13 @@
         }
 
         function openWaze() { if (!selectedClient) return; window.open(`https://waze.com/ul?ll=${selectedClient.lat},${selectedClient.lng}&navigate=yes`, '_blank'); }
-        function openGoogleMaps() { if (!selectedClient) return; let url = (userLat && userLng) ? `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLng}&destination=${selectedClient.lat},${selectedClient.lng}&travelmode=driving` : `https://www.google.com/maps/search/?api=1&query=${selectedClient.lat},${selectedClient.lng}`; window.open(url, '_blank'); }
+        function openGoogleMaps() { if (!selectedClient) return; let url = (window.userLat && window.userLng) ? `https://www.google.com/maps/dir/?api=1&origin=${window.userLat},${window.userLng}&destination=${selectedClient.lat},${selectedClient.lng}&travelmode=driving` : `https://www.google.com/maps/search/?api=1&query=${selectedClient.lat},${selectedClient.lng}`; window.open(url, '_blank'); }
 
         async function saveClient(e) {
             e.preventDefault();
-            if (!userLat || !userLng) { openGpsModal(); return; }
+            if (!window.userLat || !window.userLng) { openGpsModal(); return; }
             const btnSave = document.getElementById('btn-save'); btnSave.disabled = true; btnSave.innerHTML = '<div class="loader mr-2 border-white border-t-transparent w-5 h-5 border-2"></div> Subiendo...';
-            const newClient = { codigo: document.getElementById('reg-code').value, nombre: document.getElementById('reg-name').value, telefono: document.getElementById('reg-phone').value, direccion: document.getElementById('reg-address').value, lat: userLat, lng: userLng, fecha: new Date().toLocaleString() };
+            const newClient = { codigo: document.getElementById('reg-code').value, nombre: document.getElementById('reg-name').value, telefono: document.getElementById('reg-phone').value, direccion: document.getElementById('reg-address').value, lat: window.userLat, lng: window.userLng, fecha: new Date().toLocaleString() };
             clients.unshift(newClient); saveToLocalStorage();
             try { await fetch(GOOGLE_APP_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newClient) }); } catch (err) {}
             setTimeout(() => { showToast("¡Éxito!", "Cliente registrado exitosamente.", "fa-check"); document.getElementById('register-form').reset(); btnSave.disabled = false; btnSave.innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-2 text-lg"></i> Guardar Cliente'; switchTab('home'); }, 800);
