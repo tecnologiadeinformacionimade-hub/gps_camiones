@@ -202,7 +202,14 @@
                         }
                     });
 
-                    if (window.renderPilotsMap) window.renderPilotsMap(pilots);
+                    // Guardamos la información en global para que el mapa la dibuje cuando se abra la pestaña
+                    window.latestPilots = pilots;
+
+                    // IMPORTANTE: Solo inicializamos Leaflet si la pestaña NO está oculta. Esto soluciona la pantalla gris.
+                    if (window.renderPilotsMap && !document.getElementById('screen-pilots').classList.contains('hidden')) {
+                        window.renderPilotsMap(pilots);
+                    }
+                    
                     if (window.manageSOSAudio) window.manageSOSAudio(anySOS); 
 
                     // LÓGICA DE NOTIFICACIONES S.O.S (Solo lanza si es una nueva emergencia)
@@ -239,7 +246,25 @@
 
         } else {
             window.updatePilotLocation = async (lat, lng, status) => { /* Silencioso */ };
-            window.startPilotsListener = () => { /* Silencioso */ };
+            window.startPilotsListener = () => { 
+                setInterval(() => {
+                    if (window.userLat && window.userLng) {
+                        const myName = localStorage.getItem('imade_pilot_name') || "Piloto Local";
+                        const fallbackPilots = [{
+                            id: 'local-user', 
+                            name: myName + " (Tú)", 
+                            lat: window.userLat, 
+                            lng: window.userLng, 
+                            status: 'activo'
+                        }];
+                        window.latestPilots = fallbackPilots;
+                        if (window.renderPilotsMap && !document.getElementById('screen-pilots').classList.contains('hidden')) {
+                            window.renderPilotsMap(fallbackPilots);
+                        }
+                    }
+                }, 3000);
+            };
+            setTimeout(() => window.startPilotsListener(), 1500);
         }
     </script>
 
@@ -558,7 +583,7 @@
                         osc.type = 'square';
                         osc.frequency.setValueAtTime(800, audioCtx.currentTime);
                         osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.2);
-                        gain.gain.setValueAtTime(1.5, audioCtx.currentTime); // Volumen de la alarma
+                        gain.gain.setValueAtTime(0.15, audioCtx.currentTime); // Volumen de la alarma
                         osc.connect(gain);
                         gain.connect(audioCtx.destination);
                         osc.start();
@@ -686,12 +711,12 @@
             
             // CORRECCIÓN DEL MAPA GRIS
             if (tabId === 'pilots') {
-                if (!pilotsMap && window.renderPilotsMap) {
-                    window.renderPilotsMap([]); // Inicializa a la fuerza aunque no haya datos aún
-                }
                 setTimeout(() => {
+                    if (window.renderPilotsMap) {
+                        window.renderPilotsMap(window.latestPilots || []);
+                    }
                     if (pilotsMap) pilotsMap.invalidateSize(); // Refresca el tamaño del canvas de Leaflet
-                }, 300);
+                }, 200);
             }
         }
 
@@ -713,7 +738,7 @@
             if (window.updatePilotLocation) window.updatePilotLocation(window.userLat, window.userLng, 'SOS');
             
             document.getElementById('sos-active-modal').classList.remove('hidden');
-            let timeLeft = 15;
+            let timeLeft = 30;
             document.getElementById('sos-timer').innerText = timeLeft;
             
             clearInterval(mySosInterval);
