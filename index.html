@@ -184,6 +184,7 @@
                     await signInAnonymously(auth); 
                 } catch(error) {
                     console.error("Error Auth Firebase:", error);
+                    // ALERTA DE ERROR SI OLVIDÓ EL PASO 3 DE FIREBASE
                     setTimeout(() => {
                         showToast("⚠️ Falta un paso en Firebase", "Ve a tu proyecto > Authentication > y Activa el método 'Anónimo'.", "fa-triangle-exclamation", "text-red-500", "bg-red-50 border-red-200");
                     }, 2000);
@@ -195,6 +196,7 @@
                 if (user) {
                     window.currentUser = user;
                     window.startPilotsListener();
+                    // Intentar guardar su ubicación inmediatamente después de autenticarse
                     if (window.userLat && window.userLng) {
                         window.updatePilotLocation(window.userLat, window.userLng, 'activo');
                     }
@@ -226,6 +228,7 @@
 
                     snapshot.forEach(doc => {
                         const data = doc.data();
+                        // Solo mostrar pilotos que hayan actualizado en la última hora
                         if (now - data.timestamp < 3600000) { 
                            pilots.push({...data, id: doc.id});
                            if(data.status === 'SOS' && doc.id !== window.currentUser.uid) {
@@ -235,8 +238,10 @@
                         }
                     });
 
+                    // Guardamos la información en global para que el mapa la dibuje
                     window.latestPilots = pilots;
 
+                    // Dibujar el mapa solo si la pestaña no está oculta
                     if (window.renderPilotsMap && !document.getElementById('screen-pilots').classList.contains('hidden')) {
                         window.renderPilotsMap(pilots);
                     }
@@ -260,7 +265,7 @@
 
                         if (Notification.permission === 'granted') {
                             // En PWAs (especialmente Android Chrome), las notificaciones DEBEN lanzarse desde el Service Worker
-                            if ('serviceWorker' in navigator) {
+                            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
                                 navigator.serviceWorker.ready.then(function(registration) {
                                     registration.showNotification(notifTitle, notifOptions);
                                 });
@@ -454,15 +459,19 @@
                             <span id="map-client-distance" class="bg-blue-50 text-imade-light text-xs font-bold px-3 py-1.5 rounded-xl whitespace-nowrap border border-blue-100 shadow-sm hidden">-- km</span>
                         </div>
                         
-                        <!-- INFORMACIÓN DE CLIENTE DETALLADA (NUEVA) -->
+                        <!-- INFORMACIÓN DE CLIENTE DETALLADA (A PRUEBA DE ERRORES) -->
                         <div class="bg-gray-50/80 p-4 rounded-2xl border border-gray-100 mt-3 space-y-2.5">
-                            <p id="map-client-address" class="text-gray-600 text-sm flex items-start font-medium">
+                            <p class="text-gray-600 text-sm flex items-start font-medium">
                                 <i class="fa-solid fa-location-dot mt-0.5 mr-2 text-imade-light"></i>
                                 <span class="leading-snug" id="map-client-address-text">Dirección detallada aquí</span>
                             </p>
                             <p id="map-client-phone-container" class="text-gray-600 text-sm flex items-center font-medium hidden">
                                 <i class="fa-solid fa-phone mr-2 text-green-500"></i>
                                 <a href="#" id="map-client-phone-link" class="text-blue-600 underline underline-offset-2 font-bold tracking-wide">Teléfono</a>
+                            </p>
+                            <p class="text-gray-500 text-xs flex items-center font-medium opacity-80 mt-1">
+                                <i class="fa-solid fa-map-pin mr-2"></i>
+                                <span id="map-client-coords">Lat: 0, Lng: 0</span>
                             </p>
                         </div>
 
@@ -495,13 +504,14 @@
                             
                             <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Nombre de Cliente</label><input type="text" id="reg-name" required placeholder="Ej. Distribuidora Central" class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800"></div>
                             <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Código de Cliente</label><input type="text" id="reg-code" required placeholder="Ej. 1234" class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800"></div>
-                            <!-- SE AGREGÓ REQUIRED AQUÍ 👇 -->
+                            
                             <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Teléfono</label><input type="tel" id="reg-phone" required placeholder="Ej. 5555-5555" class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800"></div>
                             <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Departamento</label><input type="text" id="reg-depto" required placeholder="Ej. Guatemala" class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800"></div>
-                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Municipio / Dirección</label><textarea id="reg-address" required rows="2" placeholder="Ej. Mixco, Zona 1..." class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm resize-none font-bold text-gray-800"></textarea></div>
+                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Municipio</label><input type="text" id="reg-muni" required placeholder="Ej. Mixco" class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800"></div>
+                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Dirección Exacta</label><textarea id="reg-address" required rows="2" placeholder="Ej. 4ta Calle 2-33 Zona 1..." class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm resize-none font-bold text-gray-800"></textarea></div>
                             
                             <!-- País (Automático) -->
-                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">País (Por Defecto)</label><input type="text" id="reg-pais" value="Guatemala" disabled class="w-full px-4 py-4 bg-gray-100 rounded-2xl border border-transparent text-sm font-bold text-gray-500 shadow-inner"></div>
+                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">País</label><input type="text" id="reg-pais" value="Guatemala" required class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800 shadow-inner"></div>
                         </div>
                         <div class="pt-2"><button type="submit" id="btn-save" class="w-full bg-imade-dark text-white font-black py-4 rounded-2xl shadow-xl shadow-imade-dark/30 hover:bg-blue-900 transition-all active:scale-95 disabled:opacity-50 flex justify-center items-center"><i class="fa-solid fa-cloud-arrow-up mr-2 text-lg"></i> Guardar Cliente</button></div>
                     </form>
@@ -677,7 +687,7 @@
             });
         }
 
-        const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxwFHCnZIWDl6KSXsdwU3eXq0Tv9h5glJ6_98xGQko9DTwFaM6FjEeI1kfU5_PSRo9s/exec";
+        const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxcRkigrL1czz6ZKLSiuiIhl6WxmW3bGG-hA9ynhyr4c8kL-THG70a0niDDBDu5WtuX/exec";
         
         let clients = [];
         let map = null;
@@ -1085,14 +1095,20 @@
             });
         }
 
+        // A PRUEBA DE ERRORES: Se fuerza la conversión a texto en los filtros
         function filterClients() {
             const term = document.getElementById('search-input').value.toLowerCase();
-            let filtered = clients.filter(c => (c.nombre && c.nombre.toLowerCase().includes(term)) || (c.codigo && String(c.codigo).toLowerCase().includes(term)));
+            let filtered = clients.filter(c => {
+                const nombreMatch = c.nombre && String(c.nombre).toLowerCase().includes(term);
+                const codigoMatch = c.codigo && String(c.codigo).toLowerCase().includes(term);
+                return nombreMatch || codigoMatch;
+            });
+
             if (window.userLat && window.userLng) { filtered = filtered.map(c => { c.distancia = window.calculateDistance(window.userLat, window.userLng, c.lat, c.lng); return c; }); } 
             else { filtered = filtered.map(c => { c.distancia = null; return c; }); }
 
             if (currentSortMethod === 'distance') { filtered.sort((a, b) => { if (a.distancia === null) return 1; if (b.distancia === null) return -1; return a.distancia - b.distancia; }); } 
-            else if (currentSortMethod === 'name') { filtered.sort((a, b) => { let nameA = a.nombre ? a.nombre.toLowerCase() : ''; let nameB = b.nombre ? b.nombre.toLowerCase() : ''; return nameA.localeCompare(nameB); }); }
+            else if (currentSortMethod === 'name') { filtered.sort((a, b) => { let nameA = a.nombre ? String(a.nombre).toLowerCase() : ''; let nameB = b.nombre ? String(b.nombre).toLowerCase() : ''; return nameA.localeCompare(nameB); }); }
             else if (currentSortMethod === 'code') { filtered.sort((a, b) => { let numA = parseInt(a.codigo); let numB = parseInt(b.codigo); if(!isNaN(numA) && !isNaN(numB)) return numA - numB; return String(a.codigo).localeCompare(String(b.codigo)); }); }
             renderClientList(filtered);
         }
@@ -1111,29 +1127,47 @@
             finally { icon.classList.remove('fa-spin'); }
         }
 
+        // A PRUEBA DE ERRORES: Si el teléfono o el código es un número en el caché, no colapsará.
         function selectClientForRoute(client) {
             selectedClient = client;
             if (!selectedClient.lat || !selectedClient.lng || (selectedClient.lat === 0 && selectedClient.lng === 0)) { showToast("Error", "Cliente <strong>no tiene coordenadas</strong>.", "fa-triangle-exclamation"); return; }
-            document.getElementById('map-client-name').textContent = client.nombre;
             
-            // Lógica para mostrar la dirección completa (Nueva)
-            let dirStr = `<span class="font-bold text-gray-800 bg-white px-2 py-0.5 rounded shadow-sm border border-gray-200 mr-1 text-[11px] align-middle"># ${client.codigo}</span> ${client.direccion}`;
-            document.getElementById('map-client-address-text').innerHTML = dirStr;
+            document.getElementById('map-client-name').textContent = client.nombre || 'Sin Nombre';
             
-            // Lógica para mostrar el teléfono si existe (Nueva)
+            let dirStr = `<span class="font-bold text-gray-800 bg-white px-2 py-0.5 rounded shadow-sm border border-gray-200 mr-1 text-[11px] align-middle"># ${client.codigo || 'S/N'}</span> ${client.direccion || 'Sin dirección'}`;
+            const addressEl = document.getElementById('map-client-address-text');
+            if (addressEl) addressEl.innerHTML = dirStr;
+            
             const phoneContainer = document.getElementById('map-client-phone-container');
             const phoneLink = document.getElementById('map-client-phone-link');
-            if(client.telefono && client.telefono.trim() !== '') {
-                phoneLink.textContent = client.telefono;
-                phoneLink.href = `tel:${client.telefono.replace(/\s+/g, '')}`;
-                phoneContainer.classList.remove('hidden');
+            const telStr = String(client.telefono || '').trim(); // Obligamos a que sea texto siempre
+            
+            if(telStr !== '') {
+                if (phoneLink) {
+                    phoneLink.textContent = telStr;
+                    phoneLink.href = `tel:${telStr.replace(/\s+/g, '')}`;
+                }
+                if (phoneContainer) phoneContainer.classList.remove('hidden');
             } else {
-                phoneContainer.classList.add('hidden');
+                if (phoneContainer) phoneContainer.classList.add('hidden');
             }
 
+            const coordsEl = document.getElementById('map-client-coords');
+            if (coordsEl) coordsEl.textContent = `Lat: ${client.lat.toFixed(6)}, Lng: ${client.lng.toFixed(6)}`;
+
             const distBadge = document.getElementById('map-client-distance');
-            if(client.distancia) { distBadge.textContent = client.distancia < 1 ? `${(client.distancia * 1000).toFixed(0)} m` : `${client.distancia.toFixed(1)} km`; distBadge.classList.remove('hidden'); } else { distBadge.classList.add('hidden'); }
-            document.getElementById('screen-search').classList.add('hidden'); document.getElementById('bottom-nav').classList.add('hidden'); document.getElementById('screen-map').classList.remove('hidden');
+            if(client.distancia) { 
+                if (distBadge) {
+                    distBadge.textContent = client.distancia < 1 ? `${(client.distancia * 1000).toFixed(0)} m` : `${client.distancia.toFixed(1)} km`; 
+                    distBadge.classList.remove('hidden'); 
+                }
+            } else { 
+                if (distBadge) distBadge.classList.add('hidden'); 
+            }
+            
+            document.getElementById('screen-search').classList.add('hidden'); 
+            document.getElementById('bottom-nav').classList.add('hidden'); 
+            document.getElementById('screen-map').classList.remove('hidden');
             setTimeout(initMap, 400); 
         }
 
@@ -1160,17 +1194,35 @@
 
         async function saveClient(e) {
             e.preventDefault();
+            
+            // VALIDACIÓN ESTRICTA: Obliga a llenar todos los campos antes de continuar
+            const nombreStr = document.getElementById('reg-name').value.trim();
+            const codigoStr = document.getElementById('reg-code').value.trim();
+            const telStr = document.getElementById('reg-phone').value.trim();
+            const deptoStr = document.getElementById('reg-depto').value.trim();
+            const muniStr = document.getElementById('reg-muni').value.trim();
+            const dirStr = document.getElementById('reg-address').value.trim();
+            const paisStr = document.getElementById('reg-pais').value.trim();
+
+            if (!nombreStr || !codigoStr || !telStr || !deptoStr || !muniStr || !dirStr || !paisStr) {
+                showToast("Campos Incompletos", "Debes llenar toda la información del cliente.", "fa-triangle-exclamation", "text-red-500", "bg-red-50 border-red-200");
+                return;
+            }
+
             if (!window.userLat || !window.userLng) { openGpsModal(); return; }
+            
             const btnSave = document.getElementById('btn-save'); btnSave.disabled = true; btnSave.innerHTML = '<div class="loader mr-2 border-white border-t-transparent w-5 h-5 border-2"></div> Subiendo...';
             
             // NUEVO FORMATO EXACTO PARA GOOGLE SHEETS
             const newClient = {
                 piloto: document.getElementById('reg-pilot').value,
-                nombreCliente: document.getElementById('reg-name').value,
-                codigoCliente: document.getElementById('reg-code').value,
-                departamento: document.getElementById('reg-depto').value,
-                municipio: document.getElementById('reg-address').value,
-                pais: "Guatemala",
+                nombreCliente: nombreStr,
+                codigoCliente: codigoStr,
+                telefono: telStr,
+                departamento: deptoStr,
+                municipio: muniStr,
+                direccion: dirStr,
+                pais: paisStr,
                 lat: window.userLat,
                 lng: window.userLng,
                 fecha: new Date().toLocaleString('es-GT')
@@ -1180,8 +1232,8 @@
             clients.unshift({
                 codigo: newClient.codigoCliente,
                 nombre: newClient.nombreCliente,
-                telefono: document.getElementById('reg-phone').value,
-                direccion: newClient.municipio + ", " + newClient.departamento,
+                telefono: newClient.telefono,
+                direccion: newClient.direccion + ", " + newClient.municipio + ", " + newClient.departamento,
                 lat: window.userLat,
                 lng: window.userLng,
                 fecha: newClient.fecha
@@ -1189,7 +1241,14 @@
             saveToLocalStorage();
 
             try { await fetch(GOOGLE_APP_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newClient) }); } catch (err) {}
-            setTimeout(() => { showToast("¡Éxito!", "Cliente registrado exitosamente.", "fa-check"); document.getElementById('register-form').reset(); btnSave.disabled = false; btnSave.innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-2 text-lg"></i> Guardar Cliente'; switchTab('home'); }, 800);
+            setTimeout(() => { 
+                showToast("¡Éxito!", "Cliente registrado exitosamente.", "fa-check"); 
+                document.getElementById('register-form').reset(); 
+                document.getElementById('reg-pais').value = 'Guatemala'; // Restablece el valor por defecto
+                btnSave.disabled = false; 
+                btnSave.innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-2 text-lg"></i> Guardar Cliente'; 
+                switchTab('home'); 
+            }, 800);
         }
 
         // Nuevo Toast Mejorado
