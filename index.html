@@ -98,9 +98,9 @@
 
     <script>
         // =====================================================================
-        // SITEMA DE AUTO-ACTUALIZACIÓN PARA PWAs (VERSIÓN 1.2)
+        // SITEMA DE AUTO-ACTUALIZACIÓN PARA PWAs (VERSIÓN 1.3)
         // =====================================================================
-        const APP_VERSION = "1.2"; // <-- Versión subida a 1.2 para obligar a recargar
+        const APP_VERSION = "1.3"; // <-- Versión 1.3: Permisos de Notificaciones Forzados
         const currentVersion = localStorage.getItem('imade_app_version');
         
         if (currentVersion !== APP_VERSION) {
@@ -157,10 +157,23 @@
             <p class="text-gray-500 text-sm mt-3 font-medium px-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">Esta pestaña ya no sirve. Ciérrala y abre la aplicación directamente desde la pantalla de inicio de tu celular.</p>
         </div>
 
-        <!-- Botón de escape por si el navegador bloquea permanentemente la instalación -->
         <button id="btn-bypass" class="mt-8 text-sm font-bold text-gray-400 hover:text-gray-600 underline underline-offset-4 active:scale-95 transition-all">
             Continuar en navegador web
         </button>
+    </div>
+
+    <!-- MURO DE PERMISOS (FORZAR NOTIFICACIONES) -->
+    <div id="permissions-modal" class="fixed inset-0 bg-black/80 z-[99995] hidden flex-col items-center justify-center backdrop-blur-md px-6 text-center">
+        <div class="bg-white p-7 rounded-[32px] w-full max-w-sm text-center shadow-2xl modal-fade">
+            <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-sm">
+                <i class="fa-solid fa-bell text-4xl text-imade-light animate-bounce"></i>
+            </div>
+            <h3 class="text-xl font-black text-gray-900 mb-2 tracking-tight">Permisos Requeridos</h3>
+            <p class="text-gray-500 text-sm mb-6 font-medium">Para recibir alertas de S.O.S. de tus compañeros y garantizar tu seguridad, debes permitir que RutasApp te envíe notificaciones.</p>
+            <button onclick="requestAllPermissions()" class="w-full bg-imade-dark text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-transform flex items-center justify-center">
+                <i class="fa-solid fa-check-double mr-2"></i> Aceptar y Activar
+            </button>
+        </div>
     </div>
 
     <!-- PANTALLA DE S.O.S ACTIVO (Para quien lo inicia) -->
@@ -194,7 +207,7 @@
         try { firebaseConfig = JSON.parse(configStr); } catch(e) {}
 
         // =====================================================================
-        // ¡CONFIGURACIÓN DE FIREBASE LISTA PARA GITHUB PAGES! 🔥
+        // CONFIGURACIÓN DE FIREBASE
         // =====================================================================
         firebaseConfig = {
             apiKey: "AIzaSyDCum0Z8j33F2g8aVZxaPIzyWaN1tunSTk",
@@ -218,7 +231,6 @@
                     await signInAnonymously(auth); 
                 } catch(error) {
                     console.error("Error Auth Firebase:", error);
-                    // ALERTA DE ERROR SI OLVIDÓ EL PASO 3 DE FIREBASE
                     setTimeout(() => {
                         showToast("⚠️ Falta un paso en Firebase", "Ve a tu proyecto > Authentication > y Activa el método 'Anónimo'.", "fa-triangle-exclamation", "text-red-500", "bg-red-50 border-red-200");
                     }, 2000);
@@ -230,7 +242,6 @@
                 if (user) {
                     window.currentUser = user;
                     window.startPilotsListener();
-                    // Intentar guardar su ubicación inmediatamente después de autenticarse
                     if (window.userLat && window.userLng) {
                         window.updatePilotLocation(window.userLat, window.userLng, 'activo');
                     }
@@ -262,7 +273,6 @@
 
                     snapshot.forEach(doc => {
                         const data = doc.data();
-                        // Solo mostrar pilotos que hayan actualizado en la última hora
                         if (now - data.timestamp < 3600000) { 
                            pilots.push({...data, id: doc.id});
                            if(data.status === 'SOS' && doc.id !== window.currentUser.uid) {
@@ -272,17 +282,15 @@
                         }
                     });
 
-                    // Guardamos la información en global para que el mapa la dibuje
                     window.latestPilots = pilots;
 
-                    // Dibujar el mapa solo si la pestaña no está oculta
                     if (window.renderPilotsMap && !document.getElementById('screen-pilots').classList.contains('hidden')) {
                         window.renderPilotsMap(pilots);
                     }
                     
                     if (window.manageSOSAudio) window.manageSOSAudio(anySOS); 
 
-                    // LÓGICA DE NOTIFICACIONES S.O.S MEJORADA Y FORZADA (Android y iOS)
+                    // LÓGICA DE NOTIFICACIONES S.O.S MEJORADA (DIRECTO AL SERVICE WORKER)
                     if (anySOS && !window.wasSosActive && activeSosPilots.length > 0) {
                         let sosPilot = activeSosPilots[0];
                         let dist = window.calculateDistance ? window.calculateDistance(window.userLat, window.userLng, sosPilot.lat, sosPilot.lng) : null;
@@ -290,15 +298,15 @@
                         
                         const notifTitle = "🚨 ¡ALERTA S.O.S! 🚨";
                         const notifOptions = {
-                            body: `El piloto ${sosPilot.name} solicita apoyo urgente. Se encuentra a ${distStr}.`,
+                            body: `El piloto ${sosPilot.name} solicita apoyo urgente a ${distStr}.`,
                             icon: "https://cdn-icons-png.flaticon.com/512/854/854878.png",
                             badge: "https://cdn-icons-png.flaticon.com/512/854/854878.png",
                             vibrate: [500, 250, 500, 250, 500, 250, 500, 250, 500],
-                            requireInteraction: true // Hace que en Android no desaparezca hasta que se toque
+                            requireInteraction: true // Obliga a tocar la notificación en Android
                         };
 
-                        if (Notification.permission === 'granted') {
-                            // Fuerza la notificación mediante el Service Worker activo para evadir bloqueos de Android
+                        if ('Notification' in window && Notification.permission === 'granted') {
+                            // En PWAs de Android, ES OBLIGATORIO usar el Service Worker para mostrar la notificación
                             if ('serviceWorker' in navigator) {
                                 navigator.serviceWorker.ready.then(function(registration) {
                                     registration.showNotification(notifTitle, notifOptions);
@@ -314,19 +322,15 @@
 
                 }, (error) => {
                     console.error("Error en radar:", error);
-                    showToast("Error de Firebase", "Tu Base de Datos no permite acceso. Verifica que esté en 'Modo Prueba'.", "fa-database", "text-red-500", "bg-red-50 border-red-200");
                 });
             }
 
-            // APAGAR UBICACIÓN SOLO AL CERRAR LA PESTAÑA COMPLETAMENTE, NO AL MINIMIZAR
-            // Esto permite que el piloto siga mandando y recibiendo SOS en segundo plano
             window.addEventListener("beforeunload", () => {
                 if(window.updatePilotLocation && window.userLat && window.userLng) {
                     window.updatePilotLocation(window.userLat, window.userLng, 'inactivo');
                 }
             });
             
-            // Renovar Wakelock al volver a primer plano
             document.addEventListener("visibilitychange", () => {
                 if (document.visibilityState === 'visible' && window.requestWakeLock) {
                     window.requestWakeLock();
@@ -335,25 +339,7 @@
 
         } else {
             window.updatePilotLocation = async (lat, lng, status) => { /* Silencioso */ };
-            window.startPilotsListener = () => { 
-                setInterval(() => {
-                    if (window.userLat && window.userLng) {
-                        const myName = localStorage.getItem('imade_pilot_name') || "Piloto Local";
-                        const fallbackPilots = [{
-                            id: 'local-user', 
-                            name: myName + " (Tú)", 
-                            lat: window.userLat, 
-                            lng: window.userLng, 
-                            status: 'activo'
-                        }];
-                        window.latestPilots = fallbackPilots;
-                        if (window.renderPilotsMap && !document.getElementById('screen-pilots').classList.contains('hidden')) {
-                            window.renderPilotsMap(fallbackPilots);
-                        }
-                    }
-                }, 3000);
-            };
-            setTimeout(() => window.startPilotsListener(), 1500);
+            window.startPilotsListener = () => { /* Fallback */ };
         }
     </script>
 
@@ -378,7 +364,7 @@
         <!-- CONTENEDOR DE PANTALLAS -->
         <div class="flex-1 overflow-hidden relative">
             
-            <!-- PANTALLA 1: INICIO (Ajuste de márgenes para prevenir scroll oculto) -->
+            <!-- PANTALLA 1: INICIO -->
             <div id="screen-home" class="screen w-full h-full flex flex-col px-5 py-3 overflow-hidden">
                 
                 <div class="flex flex-col items-center justify-center mt-1 mb-3">
@@ -434,12 +420,14 @@
                     <i class="fa-solid fa-triangle-exclamation mr-2 text-xl animate-pulse"></i> EMITIR ALERTA S.O.S
                 </button>
 
-                <!-- Footer IT -->
+                <!-- Footer IT (AHORA MUESTRA VERSIÓN) -->
                 <div class="mt-auto pt-4 text-center pb-2">
-                    <div class="inline-flex items-center justify-center space-x-2 text-[10px] text-gray-400 font-medium bg-white border border-gray-100/50 px-3 py-1.5 rounded-full shadow-sm">
+                    <div class="inline-flex items-center justify-center space-x-2 text-[10px] text-gray-400 font-medium bg-white border border-gray-100/50 px-3 py-1.5 rounded-full shadow-sm mb-1.5">
                         <i class="fa-solid fa-laptop-code text-imade-light"></i>
                         <span>Creado por <strong>Depto. de IT</strong></span>
                     </div>
+                    <!-- Versión de la app -->
+                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest" id="app-version-text">Versión 1.3</p>
                 </div>
             </div>
 
@@ -491,7 +479,7 @@
                 <!-- BOTTOM SHEET DESPLEGABLE -->
                 <div id="bottom-sheet" class="glass-panel p-5 rounded-t-[32px] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] absolute bottom-0 left-0 w-full z-[500] transition-transform duration-300 ease-out translate-y-[calc(100%-160px)] flex flex-col h-[65dvh]">
                     
-                    <!-- Drag Handle Area (Click/Swipe to toggle) -->
+                    <!-- Drag Handle Area -->
                     <div id="drag-handle" class="w-full h-10 absolute top-0 left-0 flex justify-center items-start pt-3 cursor-grab z-10" onclick="window.toggleSheet()">
                         <div class="w-12 h-1.5 bg-gray-400/50 rounded-full"></div>
                     </div>
@@ -562,18 +550,13 @@
                             </div>
                         </div>
                         <div class="space-y-4">
-                            <!-- Piloto (Automático) -->
                             <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Piloto (Automático)</label><input type="text" id="reg-pilot" disabled class="w-full px-4 py-4 bg-gray-100 rounded-2xl border border-transparent text-sm font-bold text-gray-500 shadow-inner"></div>
-                            
                             <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Nombre de Cliente</label><input type="text" id="reg-name" required placeholder="Ej. Distribuidora Central" class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800"></div>
                             <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Código de Cliente</label><input type="text" id="reg-code" required placeholder="Ej. 1234" class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800"></div>
-                            
                             <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Teléfono</label><input type="tel" id="reg-phone" required placeholder="Ej. 5555-5555" class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800"></div>
                             <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Departamento</label><input type="text" id="reg-depto" required placeholder="Ej. Guatemala" class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800"></div>
                             <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Municipio</label><input type="text" id="reg-muni" required placeholder="Ej. Mixco" class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800"></div>
                             <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Dirección Exacta</label><textarea id="reg-address" required rows="2" placeholder="Ej. 4ta Calle 2-33 Zona 1..." class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm resize-none font-bold text-gray-800"></textarea></div>
-                            
-                            <!-- País (Automático) -->
                             <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">País</label><input type="text" id="reg-pais" value="Guatemala" required class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800 shadow-inner"></div>
                         </div>
                         <div class="pt-2"><button type="submit" id="btn-save" class="w-full bg-imade-dark text-white font-black py-4 rounded-2xl shadow-xl shadow-imade-dark/30 hover:bg-blue-900 transition-all active:scale-95 disabled:opacity-50 flex justify-center items-center"><i class="fa-solid fa-cloud-arrow-up mr-2 text-lg"></i> Guardar Cliente</button></div>
@@ -594,10 +577,7 @@
                     </div>
                 </div>
                 <div class="flex-1 w-full relative">
-                    <!-- Absolute inset-0 asegura tamaño al 100% real de la caja padre -->
                     <div id="map-pilots" class="absolute inset-0 bg-gray-100"></div>
-                    
-                    <!-- Botón para centrar el mapa de vuelta al usuario en caso de perderse -->
                     <button onclick="window.centerPilotsMap()" class="absolute bottom-6 right-4 z-[400] bg-white/90 backdrop-blur-xl w-14 h-14 rounded-full shadow-lg text-imade-dark hover:bg-gray-50 flex items-center justify-center transition-transform active:scale-90 border border-white/50">
                         <i class="fa-solid fa-location-crosshairs text-xl"></i>
                     </button>
@@ -631,8 +611,6 @@
             </button>
         </nav>
 
-        <!-- Modales Flotantes -->
-        
         <!-- Identidad del Piloto Modal -->
         <div id="name-modal" class="fixed inset-0 bg-black/60 z-[3000] hidden flex items-center justify-center backdrop-blur-md px-4 transition-opacity">
             <div class="bg-white p-7 rounded-[32px] w-full max-w-sm text-center shadow-2xl modal-fade">
@@ -731,6 +709,7 @@
                 // Refrescar tamaño de los mapas por si los abren
                 if(map) map.invalidateSize();
                 if(pilotsMap) pilotsMap.invalidateSize();
+                checkPermissions(); // Verifica permisos al entrar por bypass
             });
 
             window.addEventListener('appinstalled', () => {
@@ -743,7 +722,6 @@
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                // Modificado para forzar bypass de caché en fetch
                 const swCode = `
                     self.addEventListener('install', (e) => { self.skipWaiting(); });
                     self.addEventListener('activate', (e) => { 
@@ -756,7 +734,9 @@
                 `;
                 const blob = new Blob([swCode], {type: 'application/javascript'});
                 const url = URL.createObjectURL(blob);
-                navigator.serviceWorker.register(url).catch(err => console.log('SW error', err));
+                navigator.serviceWorker.register(url).then(reg => {
+                    console.log("Service Worker Activo y Listo para Notificaciones");
+                }).catch(err => console.log('SW error', err));
             });
         }
 
@@ -766,7 +746,6 @@
         let map = null;
         let routingControl = null;
         
-        // Hacer variables globales para que el fallback pueda accederlas
         window.userLat = null;
         window.userLng = null;
         
@@ -774,11 +753,35 @@
         let currentSortMethod = 'distance'; 
         let gpsAlertShown = false;
         
-        // Variables para el mapa en vivo de Pilotos
         let pilotsMap = null;
         let pilotMarkers = {};
 
-        // === WAKE LOCK: EVITA QUE SE APAGUE LA PANTALLA ===
+        // === LÓGICA DE PERMISOS OBLIGATORIOS ===
+        window.requestAllPermissions = function() {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        document.getElementById('permissions-modal').classList.add('hidden');
+                        showToast("¡Listo!", "Notificaciones de S.O.S activadas.", "fa-check");
+                    } else {
+                        alert("⚠️ ACCIÓN REQUERIDA: Has denegado las notificaciones. Para tu seguridad y la de la flota, ve a la configuración de tu navegador o celular y ACTIVA las notificaciones para esta app.");
+                        document.getElementById('permissions-modal').classList.add('hidden');
+                    }
+                });
+            } else {
+                alert("Tu dispositivo no soporta notificaciones (Si estás en iPhone, asegúrate de tener iOS 16.4+ y de abrir la app desde el ícono de tu pantalla de inicio).");
+                document.getElementById('permissions-modal').classList.add('hidden');
+            }
+            // Aseguramos que el GPS siga activo
+            requestLocation();
+        };
+
+        function checkPermissions() {
+            if ('Notification' in window && Notification.permission !== 'granted') {
+                document.getElementById('permissions-modal').classList.remove('hidden');
+            }
+        }
+
         let wakeLock = null;
         window.requestWakeLock = async function() {
             try {
@@ -788,7 +791,6 @@
             } catch (err) {}
         }
 
-        // === LÓGICA DE ALARMA S.O.S ===
         let sosInterval;
         let isSosPlaying = false;
         let audioCtx = null;
@@ -804,7 +806,7 @@
                         osc.type = 'square';
                         osc.frequency.setValueAtTime(800, audioCtx.currentTime);
                         osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.2);
-                        gain.gain.setValueAtTime(0.15, audioCtx.currentTime); // Volumen de la alarma
+                        gain.gain.setValueAtTime(0.15, audioCtx.currentTime); 
                         osc.connect(gain);
                         gain.connect(audioCtx.destination);
                         osc.start();
@@ -831,7 +833,6 @@
             setupSearchInput();
             checkPilotIdentity();
             
-            // Setup Bottom Sheet swipe logic
             setTimeout(() => {
                 const handle = document.getElementById('drag-handle');
                 let startY = 0;
@@ -840,24 +841,24 @@
                     handle.addEventListener('touchend', e => {
                         let endY = e.changedTouches[0].clientY;
                         if (startY - endY > 30 && !window.sheetExpanded) {
-                            window.toggleSheet(); // swiped up
+                            window.toggleSheet(); 
                         } else if (endY - startY > 30 && window.sheetExpanded) {
-                            window.toggleSheet(); // swiped down
+                            window.toggleSheet(); 
                         }
                     }, {passive: true});
                 }
             }, 1000);
         };
 
-        // Identidad del Piloto
         function checkPilotIdentity() {
             if(!localStorage.getItem('imade_pilot_name')) {
                 document.getElementById('name-modal').classList.remove('hidden');
             } else {
-                // Forzar Wakelock si ya tiene nombre guardado
                 window.requestWakeLock();
+                if (isStandalone) checkPermissions(); // Solo forzar permisos si ya está instalada
             }
         }
+
         function savePilotName() {
             const name = document.getElementById('pilot-name-input').value.trim();
             if(name.length > 2) {
@@ -865,13 +866,9 @@
                 document.getElementById('name-modal').classList.add('hidden');
                 showToast("¡Turno iniciado!", "Bienvenido " + name, "fa-user-check");
                 
-                // Pedir permisos de notificación de inmediato
-                if ("Notification" in window) { Notification.requestPermission(); }
-                
-                // Mantener pantalla encendida
+                checkPermissions();
                 window.requestWakeLock();
                 
-                // Desbloquear audio contexto al interactuar para que suene el SOS
                 if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 if(audioCtx.state === 'suspended') audioCtx.resume();
 
@@ -883,7 +880,6 @@
             }
         }
 
-        // Navegación (Aquí está el ajuste del gris)
         function switchTab(tabId) {
             ['home', 'search', 'register', 'map', 'pilots'].forEach(id => {
                 document.getElementById(`screen-${id}`).classList.add('hidden');
@@ -915,7 +911,6 @@
                 document.getElementById('reg-pilot').value = localStorage.getItem('imade_pilot_name') || 'Anónimo';
             }
             
-            // CORRECCIÓN DEL MAPA GRIS Y CENTRADO AUTOMÁTICO
             if (tabId === 'pilots') {
                 setTimeout(() => {
                     if (pilotsMap) pilotsMap.invalidateSize(); 
@@ -927,7 +922,6 @@
             }
         }
 
-        // === BOTTOM SHEET LÓGICA (DESPLEGABLE) ===
         window.sheetExpanded = false;
         window.toggleSheet = function() {
             const sheet = document.getElementById('bottom-sheet');
@@ -944,11 +938,10 @@
                 sheet.classList.remove('translate-y-0');
                 details.classList.remove('opacity-100');
                 details.classList.add('opacity-0');
-                details.scrollTop = 0; // reset scroll inside details
+                details.scrollTop = 0; 
             }
         };
 
-        // Botón central para el mapa de pilotos
         window.centerPilotsMap = function() {
             if (pilotsMap && window.userLat && window.userLng) {
                 pilotsMap.flyTo([window.userLat, window.userLng], 14, { animate: true, duration: 1 });
@@ -957,7 +950,6 @@
             }
         }
 
-        // === LÓGICA DE SOS INICIADOR ===
         window.calculateDistance = function(lat1, lon1, lat2, lon2) {
             if(!lat1 || !lon1 || !lat2 || !lon2) return null;
             const R = 6371; 
@@ -1001,7 +993,6 @@
             document.getElementById('screen-map').classList.add('hidden');
             document.getElementById('screen-search').classList.remove('hidden');
             document.getElementById('bottom-nav').classList.remove('hidden');
-            // Colapsar la tarjeta al salir
             if(window.sheetExpanded) window.toggleSheet();
         }
 
@@ -1013,7 +1004,6 @@
         }
         function closeGpsModal() { document.getElementById('gps-modal').classList.add('hidden'); }
 
-        // GPS Y ESTADOS EN HOME
         function requestLocation() {
             if ("geolocation" in navigator) {
                 navigator.geolocation.watchPosition(
@@ -1021,7 +1011,6 @@
                         window.userLat = position.coords.latitude;
                         window.userLng = position.coords.longitude;
                         
-                        // Estado GPS (Verde)
                         const homeStatus = document.getElementById('home-gps-status');
                         const homeIcon = document.getElementById('home-gps-icon');
                         if (homeStatus && homeIcon) {
@@ -1031,7 +1020,6 @@
                             homeIcon.innerHTML = `<i class="fa-solid fa-satellite-dish text-sm"></i>`;
                         }
 
-                        // Estado Piloto (Verde)
                         const pilotStatus = document.getElementById('home-pilot-status');
                         const pilotIcon = document.getElementById('home-pilot-icon');
                         if (pilotStatus && pilotIcon) {
@@ -1039,12 +1027,10 @@
                             pilotIcon.className = `w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors bg-green-50 text-green-500`;
                         }
 
-                        // Actualizar FireBase en vivo si no estamos en SOS local
                         if(window.updatePilotLocation && document.getElementById('sos-active-modal').classList.contains('hidden')){
                             window.updatePilotLocation(window.userLat, window.userLng, 'activo');
                         }
 
-                        // REDIBUJO FORZADO: Asegura que te veas a ti mismo aunque Firebase falle
                         if (window.renderPilotsMap && !document.getElementById('screen-pilots').classList.contains('hidden')) {
                             window.renderPilotsMap(window.latestPilots || []);
                         }
@@ -1059,7 +1045,6 @@
                     },
                     (error) => {
                         console.warn("Error GPS:", error.message);
-                        // Estado GPS (Rojo)
                         const homeStatus = document.getElementById('home-gps-status');
                         const homeIcon = document.getElementById('home-gps-icon');
                         if (homeStatus && homeIcon) {
@@ -1068,7 +1053,6 @@
                             homeIcon.innerHTML = `<i class="fa-solid fa-location-crosshairs text-sm"></i>`;
                         }
                         
-                        // Estado Piloto (Rojo)
                         const pilotStatus = document.getElementById('home-pilot-status');
                         const pilotIcon = document.getElementById('home-pilot-icon');
                         if (pilotStatus && pilotIcon) {
@@ -1084,7 +1068,6 @@
             }
         }
 
-        // MAPA EN VIVO DE PILOTOS (FLOTA)
         window.renderPilotsMap = function(pilots = []) {
             let startLat = window.userLat || 14.6349;
             let startLng = window.userLng || -90.5069;
@@ -1094,9 +1077,8 @@
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(pilotsMap);
             }
 
-            let displayPilots = [...pilots]; // Clonamos para no afectar el caché original
+            let displayPilots = [...pilots]; 
 
-            // INYECTAMOS AL USUARIO LOCAL A LA FUERZA: Garantiza que siempre se vea en el mapa localmente
             let myId = window.currentUser ? window.currentUser.uid : 'local-user';
             let iAmInList = displayPilots.find(p => p.id === myId);
             
@@ -1111,7 +1093,6 @@
                 });
             }
             
-            // Limpiar marcadores viejos
             const currentIds = displayPilots.map(p => p.id);
             for (const id in pilotMarkers) {
                 if (!currentIds.includes(id)) {
@@ -1120,9 +1101,8 @@
                 }
             }
 
-            // Actualizar o añadir marcadores
             displayPilots.forEach(pilot => {
-                if (pilot.status === 'inactivo' || pilot.lat === 0) return; // No mostrar inactivos
+                if (pilot.status === 'inactivo' || pilot.lat === 0) return; 
 
                 const isSOS = pilot.status === 'SOS';
                 const color = isSOS ? '#ef4444' : '#36a8e1';
@@ -1149,9 +1129,6 @@
             });
         }
 
-        // ==========================================
-        // FUNCIONES DE CLIENTES (Buscador, registro...)
-        // ==========================================
         function setupSearchInput() {
             const input = document.getElementById('search-input');
             const clearBtn = document.getElementById('clear-search-btn');
@@ -1201,7 +1178,6 @@
                     distBadge = `<span class="text-[10px] font-black text-imade-light bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-lg whitespace-nowrap shadow-sm ml-2">${distText}</span>`;
                 }
                 
-                // Mostrar un resumen más bonito en la lista principal
                 let subtext = "";
                 if (client.direccion) subtext += client.direccion;
                 if (client.municipio) subtext += (subtext ? ', ' : '') + client.municipio;
@@ -1215,7 +1191,6 @@
             });
         }
 
-        // A PRUEBA DE ERRORES: Se fuerza la conversión a texto en los filtros
         function filterClients() {
             const term = document.getElementById('search-input').value.toLowerCase();
             let filtered = clients.filter(c => {
@@ -1247,17 +1222,33 @@
             finally { icon.classList.remove('fa-spin'); }
         }
 
-        // FORMATO DE TARJETA SEPARADO
         function selectClientForRoute(client) {
             selectedClient = client;
             if (!selectedClient.lat || !selectedClient.lng || (selectedClient.lat === 0 && selectedClient.lng === 0)) { showToast("Error", "Cliente <strong>no tiene coordenadas</strong>.", "fa-triangle-exclamation"); return; }
             
             document.getElementById('map-client-name').textContent = client.nombre || 'Sin Nombre';
             
-            document.getElementById('map-client-code').textContent = `# ${client.codigo || 'S/N'}`;
-            document.getElementById('map-client-address-text').textContent = client.direccion || 'N/A';
-            document.getElementById('map-client-muni').textContent = client.municipio || 'N/A';
-            document.getElementById('map-client-depto').textContent = client.departamento || 'N/A';
+            let detailsHtml = `
+                <div class="flex items-center mb-2">
+                    <span class="font-bold text-gray-400 text-[10px] uppercase tracking-wider w-20 shrink-0">Código:</span>
+                    <span class="font-black text-imade-dark bg-white px-2 py-0.5 rounded shadow-sm border border-gray-200 text-[12px]"># ${client.codigo || 'S/N'}</span>
+                </div>
+                <div class="flex items-start mb-1.5">
+                    <span class="font-bold text-gray-400 text-[10px] uppercase tracking-wider w-20 shrink-0 mt-0.5">Dirección:</span>
+                    <span class="text-gray-700 leading-tight">${client.direccion || 'N/A'}</span>
+                </div>
+                <div class="flex items-start mb-1.5">
+                    <span class="font-bold text-gray-400 text-[10px] uppercase tracking-wider w-20 shrink-0 mt-0.5">Municipio:</span>
+                    <span class="text-gray-700 leading-tight">${client.municipio || 'N/A'}</span>
+                </div>
+                <div class="flex items-start mb-1.5">
+                    <span class="font-bold text-gray-400 text-[10px] uppercase tracking-wider w-20 shrink-0 mt-0.5">Depto:</span>
+                    <span class="text-gray-700 leading-tight">${client.departamento || 'N/A'}</span>
+                </div>
+            `;
+            
+            const addressEl = document.getElementById('map-client-details');
+            if (addressEl) addressEl.innerHTML = detailsHtml;
             
             const phoneContainer = document.getElementById('map-client-phone-container');
             const phoneLink = document.getElementById('map-client-phone-link');
@@ -1290,7 +1281,6 @@
             document.getElementById('bottom-nav').classList.add('hidden'); 
             document.getElementById('screen-map').classList.remove('hidden');
             
-            // Asegurar que la tarjeta inicie colapsada
             if(window.sheetExpanded) window.toggleSheet();
             setTimeout(initMap, 400); 
         }
@@ -1300,8 +1290,6 @@
             if (!map) { map = L.map('map', { zoomControl: false }).setView([startLat, startLng], 13); L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map); }
             map.invalidateSize(); drawRoute(startLat, startLng);
         }
-
-        function centerMap() { if (map && window.userLat && window.userLng) { map.flyTo([window.userLat, window.userLng], 15, { animate: true, duration: 1 }); } else { showToast("Ubicación", "Posición actual no disponible.", "fa-location-dot"); } }
 
         function drawRoute(startLat, startLng) {
             document.getElementById('route-loader').classList.remove('hidden');
@@ -1319,7 +1307,6 @@
         async function saveClient(e) {
             e.preventDefault();
             
-            // VALIDACIÓN ESTRICTA: Obliga a llenar todos los campos antes de continuar
             const nombreStr = document.getElementById('reg-name').value.trim();
             const codigoStr = document.getElementById('reg-code').value.trim();
             const telStr = document.getElementById('reg-phone').value.trim();
@@ -1337,7 +1324,6 @@
             
             const btnSave = document.getElementById('btn-save'); btnSave.disabled = true; btnSave.innerHTML = '<div class="loader mr-2 border-white border-t-transparent w-5 h-5 border-2"></div> Subiendo...';
             
-            // NUEVO FORMATO EXACTO PARA GOOGLE SHEETS
             const newClient = {
                 piloto: document.getElementById('reg-pilot').value,
                 nombreCliente: nombreStr,
@@ -1352,7 +1338,6 @@
                 fecha: new Date().toLocaleString('es-GT')
             };
 
-            // Guardado local (lo adaptamos para que la app no falle)
             clients.unshift({
                 codigo: newClient.codigoCliente,
                 nombre: newClient.nombreCliente,
@@ -1370,14 +1355,13 @@
             setTimeout(() => { 
                 showToast("¡Éxito!", "Cliente registrado exitosamente.", "fa-check"); 
                 document.getElementById('register-form').reset(); 
-                document.getElementById('reg-pais').value = 'Guatemala'; // Restablece el valor por defecto
+                document.getElementById('reg-pais').value = 'Guatemala'; 
                 btnSave.disabled = false; 
                 btnSave.innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-2 text-lg"></i> Guardar Cliente'; 
                 switchTab('home'); 
             }, 800);
         }
 
-        // Nuevo Toast Mejorado
         let toastTimeout;
         function showToast(title, msg, icon = "fa-bell", textColor = "text-imade-light", bgIcon = "bg-gray-100 border-gray-200") {
             const toast = document.getElementById('toast');
