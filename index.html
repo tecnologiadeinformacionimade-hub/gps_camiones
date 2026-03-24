@@ -125,16 +125,16 @@
 
     <script>
         // =========================================================
-        // SISTEMA DE ACTUALIZACIÓN AGRESIVA - VERSIÓN 2.2.5
+        // SISTEMA DE ACTUALIZACIÓN AGRESIVA - VERSIÓN 2.2.6
         // =========================================================
-        const APP_VERSION = "2.2.5"; 
+        const APP_VERSION = "2.2.6"; 
         const currentVersion = localStorage.getItem('imade_app_version');
         
         if (currentVersion !== APP_VERSION) {
             console.log("Nueva versión detectada (" + APP_VERSION + "). Limpiando caché agresivamente...");
             localStorage.setItem('imade_app_version', APP_VERSION);
             
-            // Destruir Service Workers antiguos
+            // Destruir Service Workers antiguos para evitar versiones en caché
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.getRegistrations().then(function(registrations) {
                     for(let registration of registrations) { registration.unregister(); }
@@ -209,34 +209,34 @@
     <!-- 1. DISEÑO COMPACTO Y EXACTO DEL MENÚ S.O.S (SIN SCROLL) -->
     <!-- ======================================================= -->
     <div id="sos-reason-modal" class="fixed inset-0 bg-[#080808] z-[99990] hidden flex-col items-center justify-center px-4 transition-all">
-        <div class="animate-popIn w-full flex flex-col items-center">
-            <h2 class="text-3xl font-black text-white mb-1 tracking-tight text-center">¿Cuál es la<br>emergencia?</h2>
-            <p class="text-gray-400 text-sm font-medium mb-6 text-center">Selecciona un motivo para alertar a la flota.</p>
+        <div class="animate-popIn w-full max-w-[320px] flex flex-col items-center">
+            <h2 class="text-2xl font-black text-white mb-2 tracking-tight text-center leading-tight">¿Cuál es la<br>emergencia?</h2>
+            <p class="text-gray-400 text-[13px] font-medium mb-5 text-center">Selecciona un motivo para alertar a la flota.</p>
             
-            <div class="w-full max-w-[320px] flex flex-col gap-3 mx-auto">
-                <button onclick="startSosCountdown('💥', 'Choque o Accidente')" class="bg-[#1c1c1e] hover:bg-[#252528] text-white p-3 rounded-2xl flex items-center gap-4 transition-all active:scale-95 w-full">
-                    <div class="w-12 h-12 bg-[#2d1a1a] rounded-xl flex items-center justify-center text-2xl shrink-0 shadow-inner">💥</div> 
-                    <span class="text-[15px] font-bold text-left leading-tight">Choque o<br>Accidente</span>
+            <div class="w-full flex flex-col gap-2.5">
+                <button onclick="startSosCountdown('💥', 'Choque o Accidente')" class="bg-[#1c1c1e] hover:bg-[#252528] text-white p-2 rounded-[14px] flex items-center gap-4 transition-all active:scale-95 w-full border border-[#2a2a2c]">
+                    <div class="w-11 h-11 bg-[#2d1a1a] rounded-xl flex items-center justify-center text-xl shrink-0 shadow-inner">💥</div> 
+                    <span class="text-[14px] font-bold text-left leading-tight">Choque o<br>Accidente</span>
                 </button>
-                <button onclick="startSosCountdown('⚠️', 'Asalto o Robo en Ruta')" class="bg-[#1c1c1e] hover:bg-[#252528] text-white p-3 rounded-2xl flex items-center gap-4 transition-all active:scale-95 w-full">
-                    <div class="w-12 h-12 bg-[#2d2610] rounded-xl flex items-center justify-center text-2xl shrink-0 shadow-inner">⚠️</div> 
-                    <span class="text-[15px] font-bold text-left leading-tight">Asalto o<br>Robo en Ruta</span>
+                <button onclick="startSosCountdown('⚠️', 'Asalto o Robo en Ruta')" class="bg-[#1c1c1e] hover:bg-[#252528] text-white p-2 rounded-[14px] flex items-center gap-4 transition-all active:scale-95 w-full border border-[#2a2a2c]">
+                    <div class="w-11 h-11 bg-[#2d2610] rounded-xl flex items-center justify-center text-xl shrink-0 shadow-inner">⚠️</div> 
+                    <span class="text-[14px] font-bold text-left leading-tight">Asalto o<br>Robo en Ruta</span>
                 </button>
-                <button onclick="startSosCountdown('🚑', 'Emergencia Médica')" class="bg-[#1c1c1e] hover:bg-[#252528] text-white p-3 rounded-2xl flex items-center gap-4 transition-all active:scale-95 w-full">
-                    <div class="w-12 h-12 bg-[#1a202d] rounded-xl flex items-center justify-center text-2xl shrink-0 shadow-inner">🚑</div> 
-                    <span class="text-[15px] font-bold text-left leading-tight">Emergencia<br>Médica</span>
+                <button onclick="startSosCountdown('🚑', 'Emergencia Médica')" class="bg-[#1c1c1e] hover:bg-[#252528] text-white p-2 rounded-[14px] flex items-center gap-4 transition-all active:scale-95 w-full border border-[#2a2a2c]">
+                    <div class="w-11 h-11 bg-[#1a202d] rounded-xl flex items-center justify-center text-xl shrink-0 shadow-inner">🚑</div> 
+                    <span class="text-[14px] font-bold text-left leading-tight">Emergencia<br>Médica</span>
                 </button>
-                <button onclick="startSosCountdown('🛠️', 'Falla Mecánica')" class="bg-[#1c1c1e] hover:bg-[#252528] text-white p-3 rounded-2xl flex items-center gap-4 transition-all active:scale-95 w-full">
-                    <div class="w-12 h-12 bg-[#222222] rounded-xl flex items-center justify-center text-2xl shrink-0 shadow-inner">🛠️</div> 
-                    <span class="text-[15px] font-bold text-left leading-tight">Falla<br>Mecánica</span>
+                <button onclick="startSosCountdown('🛠️', 'Falla Mecánica')" class="bg-[#1c1c1e] hover:bg-[#252528] text-white p-2 rounded-[14px] flex items-center gap-4 transition-all active:scale-95 w-full border border-[#2a2a2c]">
+                    <div class="w-11 h-11 bg-[#222222] rounded-xl flex items-center justify-center text-xl shrink-0 shadow-inner">🛠️</div> 
+                    <span class="text-[14px] font-bold text-left leading-tight">Falla<br>Mecánica</span>
                 </button>
-                <button onclick="startSosCountdown('⛽', 'Me quedé sin Combustible')" class="bg-[#1c1c1e] hover:bg-[#252528] text-white p-3 rounded-2xl flex items-center gap-4 transition-all active:scale-95 w-full">
-                    <div class="w-12 h-12 bg-[#2d1f1a] rounded-xl flex items-center justify-center text-2xl shrink-0 shadow-inner">⛽</div> 
-                    <span class="text-[15px] font-bold text-left leading-tight">Me quedé sin<br>Combustible</span>
+                <button onclick="startSosCountdown('⛽', 'Me quedé sin Combustible')" class="bg-[#1c1c1e] hover:bg-[#252528] text-white p-2 rounded-[14px] flex items-center gap-4 transition-all active:scale-95 w-full border border-[#2a2a2c]">
+                    <div class="w-11 h-11 bg-[#2d1f1a] rounded-xl flex items-center justify-center text-xl shrink-0 shadow-inner">⛽</div> 
+                    <span class="text-[14px] font-bold text-left leading-tight">Me quedé sin<br>Combustible</span>
                 </button>
             </div>
 
-            <button onclick="closeSosMenu()" class="mt-8 text-white font-semibold py-3 px-8 rounded-full border border-[#333] hover:bg-[#1c1c1e] active:scale-95 transition-all text-sm">
+            <button onclick="closeSosMenu()" class="mt-6 text-white/70 font-semibold py-2.5 px-8 rounded-full border border-[#333] hover:bg-[#1c1c1e] active:scale-95 transition-all text-sm">
                 Cancelar
             </button>
         </div>
@@ -246,22 +246,22 @@
     <!-- 2. CUENTA REGRESIVA S.O.S (DISEÑO 3 SEGUNDOS) -->
     <!-- ======================================================= -->
     <div id="sos-countdown-modal" class="fixed inset-0 bg-[#7f1d1d] z-[99991] hidden flex-col items-center justify-start pt-[max(env(safe-area-inset-top,60px),60px)] px-6 text-center overflow-hidden">
-        <h2 class="text-[34px] font-black text-white mb-6 tracking-tight leading-tight animate-popIn">ENVIANDO ALERTA<br>EN...</h2>
+        <h2 class="text-[30px] font-black text-white mb-5 tracking-tight leading-tight animate-popIn">ENVIANDO ALERTA<br>EN...</h2>
         
-        <div class="bg-black/30 text-white font-bold px-6 py-2.5 rounded-full border border-white/10 flex items-center justify-center gap-2 mb-10 shadow-md animate-popIn">
+        <div class="bg-black/30 text-white font-bold px-6 py-2.5 rounded-full border border-white/10 flex items-center justify-center gap-2 mb-8 shadow-md animate-popIn">
             <span id="sos-selected-emoji" class="text-xl">⛽</span>
-            <span id="sos-selected-text" class="text-lg">Sin Combustible</span>
+            <span id="sos-selected-text" class="text-[15px]">Sin Combustible</span>
         </div>
         
-        <div class="relative w-56 h-56 flex items-center justify-center mb-auto animate-popIn">
+        <div class="relative w-48 h-48 flex items-center justify-center mb-auto animate-popIn">
             <svg class="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="8"></circle>
                 <circle id="countdown-circle" cx="50" cy="50" r="45" fill="none" stroke="white" stroke-width="8" stroke-dasharray="283" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear"></circle>
             </svg>
-            <span class="text-[100px] font-black text-white drop-shadow-lg" id="sos-pre-timer">3</span>
+            <span class="text-[80px] font-black text-white drop-shadow-lg" id="sos-pre-timer">3</span>
         </div>
         
-        <button onclick="cancelSosCountdown()" class="w-full max-w-xs bg-white text-[#b91c1c] font-black py-4 rounded-xl shadow-xl active:scale-95 transition-transform text-[19px] mb-12 animate-popIn hover:bg-red-50">
+        <button onclick="cancelSosCountdown()" class="w-full max-w-xs bg-white text-[#b91c1c] font-black py-4 rounded-xl shadow-xl active:scale-95 transition-transform text-[17px] mb-12 animate-popIn hover:bg-red-50">
             CANCELAR ALERTA
         </button>
     </div>
@@ -270,16 +270,16 @@
     <!-- 3. PANTALLA DE S.O.S ACTIVO EXACTO AL DISEÑO -->
     <!-- ======================================================= -->
     <div id="sos-active-modal" class="fixed inset-0 bg-[#dc2626] z-[99992] hidden flex-col items-center justify-center px-6 text-center">
-        <div class="w-48 h-48 bg-white/20 rounded-full flex items-center justify-center mb-10 relative animate-pulse-fast">
-            <div class="w-36 h-36 bg-white rounded-full flex items-center justify-center shadow-2xl relative z-10">
-                <i class="fa-solid fa-triangle-exclamation text-7xl text-[#dc2626]"></i>
+        <div class="w-40 h-40 bg-white/20 rounded-full flex items-center justify-center mb-8 relative animate-pulse-fast">
+            <div class="w-32 h-32 bg-white rounded-full flex items-center justify-center shadow-2xl relative z-10">
+                <i class="fa-solid fa-triangle-exclamation text-6xl text-[#dc2626]"></i>
             </div>
         </div>
         
-        <h2 class="text-4xl font-black text-white mb-4 tracking-tight drop-shadow-md">S.O.S ACTIVO</h2>
-        <p class="text-white/95 text-xl font-medium mb-16 max-w-sm leading-snug drop-shadow-sm">Tu alerta está sonando en toda la flota y tu ubicación está siendo rastreada.</p>
+        <h2 class="text-4xl font-black text-white mb-3 tracking-tight drop-shadow-md">S.O.S ACTIVO</h2>
+        <p class="text-white/95 text-lg font-medium mb-14 max-w-[280px] leading-snug drop-shadow-sm">Tu alerta está sonando en toda la flota y tu ubicación está siendo rastreada.</p>
         
-        <button onclick="finishSOS()" class="w-full max-w-xs bg-transparent text-white border-2 border-white font-black py-4 rounded-full active:bg-white/20 transition-all text-xl backdrop-blur-sm">
+        <button onclick="finishSOS()" class="w-full max-w-xs bg-transparent text-white border-2 border-white font-black py-3.5 rounded-full active:bg-white/20 transition-all text-lg backdrop-blur-sm">
             DESACTIVAR ALERTA
         </button>
     </div>
@@ -289,36 +289,36 @@
         <button onclick="dismissSosBanner()" class="absolute top-10 right-6 w-12 h-12 bg-black/20 rounded-full text-white flex items-center justify-center hover:bg-black/40 transition-colors active:scale-90 border border-white/20">
             <i class="fa-solid fa-xmark text-2xl"></i>
         </button>
-        <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-5 animate-pulse text-red-600 shadow-xl relative mt-4">
+        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 animate-pulse text-red-600 shadow-xl relative mt-4">
             <div class="absolute inset-0 border-4 border-white rounded-full animate-ping opacity-50"></div>
-            <i class="fa-solid fa-triangle-exclamation text-5xl"></i>
+            <i class="fa-solid fa-triangle-exclamation text-4xl"></i>
         </div>
-        <h2 class="text-3xl font-black text-white mb-2 tracking-tight drop-shadow-md">¡ALERTA S.O.S!</h2>
+        <h2 class="text-2xl font-black text-white mb-2 tracking-tight drop-shadow-md">¡ALERTA S.O.S!</h2>
         
         <!-- Badge Motivo -->
-        <div id="sos-receive-reason" class="bg-black/30 text-white font-bold px-4 py-1.5 rounded-full text-sm mb-4 border border-white/20 shadow-inner flex items-center justify-center gap-2">
+        <div id="sos-receive-reason" class="bg-black/30 text-white font-bold px-4 py-1.5 rounded-full text-sm mb-3 border border-white/20 shadow-inner flex items-center justify-center gap-2">
             Motivo Desconocido
         </div>
 
-        <p id="sos-receive-text" class="text-red-100 text-base font-medium leading-relaxed max-w-xs mx-auto drop-shadow-sm">Un compañero necesita ayuda.</p>
-        <p class="text-white/80 text-xs mt-5 bg-black/20 px-3 py-1 rounded-full"><i class="fa-solid fa-volume-high mr-1"></i> Alarma en curso</p>
+        <p id="sos-receive-text" class="text-red-100 text-sm font-medium leading-relaxed max-w-xs mx-auto drop-shadow-sm">Un compañero necesita ayuda.</p>
+        <p class="text-white/80 text-xs mt-4 bg-black/20 px-3 py-1 rounded-full"><i class="fa-solid fa-volume-high mr-1"></i> Alarma en curso</p>
     </div>
 
     <!-- ======================================================= -->
-    <!-- FIREBASE INTEGRATION (NUEVA CONFIGURACIÓN)              -->
+    <!-- FIREBASE INTEGRATION (NUEVA CONFIGURACIÓN + BACKUP LOGIC)-->
     <!-- ======================================================= -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         window.latestPilots = [];
 
-        // Aseguramos que use un appId consistente incluso si se ejecuta fuera de Canvas
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'rutas-imade-v2-2-5';
+        // Forzamos el ID de la app para que todos los usuarios guarden en la misma colección exacta
+        const appId = 'rutas-imade-pro'; 
         
-        // ¡NUEVA CONFIGURACIÓN DE FIREBASE!
+        // Configuración EXACTA proporcionada
         const firebaseConfig = {
             apiKey: "AIzaSyDuTcXKVb4VkpAkbT3ubaBUZ1U9uvuUrhg",
             authDomain: "base-de-datos---imade.firebaseapp.com",
@@ -337,17 +337,14 @@
         window.firebaseDb = db;
         window.firebaseAppId = appId;
 
+        // Lógica de Autenticación Idéntica al Backup Funcional (Simple y limpia)
         const initAuth = async () => { 
             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth); 
-                }
+                await signInAnonymously(auth); 
             } catch(error) {
                 console.error("Error Auth Firebase:", error);
                 setTimeout(() => {
-                    showToast("⚠️ Firebase Auth Error", "Asegúrate de habilitar el inicio de sesión Anónimo en tu consola de Firebase.", "fa-triangle-exclamation", "text-red-500", "bg-red-50 border-red-200");
+                    alert("⚠️ Error Firebase: Por favor, en tu consola de Firebase ve a 'Authentication' y activa el método de inicio de sesión 'Anónimo'.");
                 }, 3000);
             }
         };
@@ -366,6 +363,7 @@
         window.updatePilotLocation = async (lat, lng, status, reason = '', emoji = '') => {
             if(!window.currentUser || !window.firebaseDb) return;
             try {
+                // Escribir en la ruta fija: artifacts/rutas-imade-pro/public/data/pilotos
                 const pilotRef = doc(window.firebaseDb, 'artifacts', window.firebaseAppId, 'public', 'data', 'pilotos', window.currentUser.uid);
                 await setDoc(pilotRef, {
                     lat, lng, status,
@@ -402,6 +400,7 @@
                     // Filtrar pilotos inactivos (más de 1 hora)
                     if (now - data.timestamp < 3600000) { 
                         pilots.push({...data, id: doc.id});
+                        // Si status es SOS y el ID no es el mío, alguien activó la alerta
                         if(data.status === 'SOS' && doc.id !== window.currentUser.uid) {
                             anySOS = true;
                             activeSosPilots.push({...data, id: doc.id});
@@ -580,7 +579,7 @@
                         <i class="fa-solid fa-laptop-code text-imade-light"></i>
                         <span>Creado por <strong>Depto. de IT</strong></span>
                     </div>
-                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest" id="app-version-text">Versión 2.2.5</p>
+                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest" id="app-version-text">Versión 2.2.6</p>
                 </div>
             </div>
 
@@ -895,331 +894,7 @@
             return colors[hash % colors.length];
         }
 
-        window.requestAllPermissions = function() {
-            if ('Notification' in window) {
-                Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') {
-                        document.getElementById('permissions-modal').classList.add('hidden');
-                        showToast("¡Listo!", "Notificaciones de S.O.S activadas.", "fa-check");
-                        if ('serviceWorker' in navigator) {
-                            try {
-                                navigator.serviceWorker.getRegistrations().then(regs => {
-                                    if(regs && regs.length > 0) regs[0].showNotification("RutasApp", {body:"Permisos listos", icon: "https://cdn-icons-png.flaticon.com/512/854/854878.png"}).catch(e => console.warn(e));
-                                });
-                            } catch(e) {}
-                        }
-                    } else {
-                        showToast("Acción Requerida", "Has denegado las notificaciones. Actívalas en tu navegador.", "fa-triangle-exclamation", "text-red-500", "bg-red-50 border-red-200");
-                        document.getElementById('permissions-modal').classList.add('hidden');
-                    }
-                });
-            } else {
-                showToast("Aviso", "Tu dispositivo no soporta notificaciones nativas.", "fa-info-circle");
-                document.getElementById('permissions-modal').classList.add('hidden');
-            }
-            requestLocation();
-        };
-
-        function checkPermissions() {
-            if ('Notification' in window && Notification.permission !== 'granted') {
-                document.getElementById('permissions-modal').classList.remove('hidden');
-            }
-        }
-
-        let wakeLock = null;
-        window.requestWakeLock = async function() {
-            try {
-                if ('wakeLock' in navigator) {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                }
-            } catch (err) {}
-        }
-
-        let sosInterval;
-        let isSosPlaying = false;
-        let audioCtx = null;
-        
-        window.manageSOSAudio = function(forcePlay) {
-            if (forcePlay && !isSosPlaying) {
-                isSosPlaying = true;
-                if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if(audioCtx.state === 'suspended') audioCtx.resume();
-                
-                sosInterval = setInterval(() => {
-                    try {
-                        const osc = audioCtx.createOscillator();
-                        const gain = audioCtx.createGain();
-                        osc.type = 'square';
-                        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-                        osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.2);
-                        gain.gain.setValueAtTime(0.15, audioCtx.currentTime); 
-                        osc.connect(gain);
-                        gain.connect(audioCtx.destination);
-                        osc.start();
-                        osc.stop(audioCtx.currentTime + 0.4);
-
-                        if (navigator.vibrate) navigator.vibrate([400, 200]);
-                    } catch(e) {}
-                }, 600);
-            } else if (!forcePlay && isSosPlaying) {
-                isSosPlaying = false;
-                clearInterval(sosInterval);
-                if (navigator.vibrate) navigator.vibrate(0);
-            }
-        };
-
-        let activeSosReason = '';
-        let activeSosEmoji = '';
-        let countdownTimer;
-
-        // 1. Abre el menú para seleccionar motivo (CENTRALIZADO)
-        window.openSosMenu = function() {
-            if (!window.userLat || !window.userLng) { showToast("Error", "GPS no disponible para enviar S.O.S"); return; }
-            document.getElementById('sos-reason-modal').classList.remove('hidden');
-            document.getElementById('sos-reason-modal').classList.add('flex');
-            
-            if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if(audioCtx.state === 'suspended') audioCtx.resume();
-        };
-
-        window.closeSosMenu = function() {
-            document.getElementById('sos-reason-modal').classList.add('hidden');
-            document.getElementById('sos-reason-modal').classList.remove('flex');
-        };
-
-        // 2. Inicia la cuenta regresiva de 3 segundos
-        window.startSosCountdown = function(emoji, reason) {
-            activeSosReason = reason;
-            activeSosEmoji = emoji;
-            closeSosMenu();
-            
-            const countdownModal = document.getElementById('sos-countdown-modal');
-            countdownModal.classList.remove('hidden');
-            countdownModal.classList.add('flex');
-            
-            document.getElementById('sos-selected-emoji').innerText = emoji;
-            document.getElementById('sos-selected-text').innerText = reason;
-            
-            let timeLeft = 3; // Diseño muestra 3
-            document.getElementById('sos-pre-timer').innerText = timeLeft;
-            
-            // Animación del círculo SVG
-            const circle = document.getElementById('countdown-circle');
-            circle.style.transition = 'none';
-            circle.style.strokeDashoffset = '0';
-            setTimeout(() => {
-                circle.style.transition = 'stroke-dashoffset 3s linear';
-                circle.style.strokeDashoffset = '283';
-            }, 50);
-
-            clearInterval(countdownTimer);
-            countdownTimer = setInterval(() => {
-                timeLeft--;
-                document.getElementById('sos-pre-timer').innerText = timeLeft;
-                if(timeLeft <= 0) {
-                    clearInterval(countdownTimer);
-                    confirmSos();
-                }
-            }, 1000);
-        };
-
-        // 3. Cancela la alerta antes de que se envíe
-        window.cancelSosCountdown = function() {
-            clearInterval(countdownTimer);
-            const countdownModal = document.getElementById('sos-countdown-modal');
-            countdownModal.classList.add('hidden');
-            countdownModal.classList.remove('flex');
-            
-            showToast("Cancelado", "Alerta S.O.S abortada.", "fa-check");
-            const circle = document.getElementById('countdown-circle');
-            circle.style.transition = 'none';
-            circle.style.strokeDashoffset = '0';
-        };
-
-        // 4. Se ejecuta si la cuenta regresiva llega a 0
-        window.confirmSos = function() {
-            document.getElementById('sos-countdown-modal').classList.add('hidden');
-            document.getElementById('sos-countdown-modal').classList.remove('flex');
-            
-            const activeModal = document.getElementById('sos-active-modal');
-            activeModal.classList.remove('hidden');
-            activeModal.classList.add('flex');
-            
-            // Enviar a Firebase con el motivo
-            if (window.updatePilotLocation) window.updatePilotLocation(window.userLat, window.userLng, 'SOS', activeSosReason, activeSosEmoji);
-            
-            // Forzar reproducción de alarma local
-            window.manageSOSAudio(true);
-        };
-
-        // 5. Apagar la alerta activa
-        window.finishSOS = function() {
-            const activeModal = document.getElementById('sos-active-modal');
-            activeModal.classList.add('hidden');
-            activeModal.classList.remove('flex');
-            
-            if (window.updatePilotLocation && window.userLat && window.userLng) {
-                window.updatePilotLocation(window.userLat, window.userLng, 'activo', '', '');
-            }
-            window.manageSOSAudio(false); // Detener audio local
-            showToast("S.O.S Finalizado", "Tu estado volvió a activo", "fa-shield-check");
-        };
-
-        const mockData = [
-            { codigo: '169', nombre: 'Jersson Ariel Ramirez', telefono: '', direccion: 'Gualán', municipio: 'Gualán', departamento: 'Zacapa', lat: 15.115577, lng: -89.354512 },
-            { codigo: '642', nombre: 'Victoriano Sulugui', telefono: '', direccion: 'Totonicapán', municipio: 'Totonicapán', departamento: 'Totonicapán', lat: 14.826953, lng: -91.218808 }
-        ];
-
-        window.onload = () => {
-            loadClients();
-            requestLocation();
-            setTimeout(syncData, 1000); 
-            setupSearchInput();
-            checkPilotIdentity();
-            
-            setTimeout(() => {
-                const handle = document.getElementById('drag-handle');
-                let startY = 0;
-                if(handle) {
-                    handle.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, {passive: true});
-                    handle.addEventListener('touchend', e => {
-                        let endY = e.changedTouches[0].clientY;
-                        if (startY - endY > 30 && !window.sheetExpanded) {
-                            window.toggleSheet(); 
-                        } else if (endY - startY > 30 && window.sheetExpanded) {
-                            window.toggleSheet(); 
-                        }
-                    }, {passive: true});
-                }
-            }, 1000);
-        };
-
-        function checkPilotIdentity() {
-            if(!localStorage.getItem('imade_pilot_name')) {
-                document.getElementById('name-modal').classList.remove('hidden');
-            } else {
-                window.requestWakeLock();
-                if (isStandalone) checkPermissions(); 
-            }
-        }
-
-        function savePilotName() {
-            const name = document.getElementById('pilot-name-input').value.trim();
-            if(name.length > 2) {
-                localStorage.setItem('imade_pilot_name', name);
-                document.getElementById('name-modal').classList.add('hidden');
-                showToast("¡Turno iniciado!", "Bienvenido " + name, "fa-user-check");
-                
-                checkPermissions();
-                window.requestWakeLock();
-                
-                if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if(audioCtx.state === 'suspended') audioCtx.resume();
-
-                if (window.updatePilotLocation && window.userLat && window.userLng) {
-                    window.updatePilotLocation(window.userLat, window.userLng, 'activo');
-                }
-            } else {
-                showToast("Aviso", "Por favor ingresa un nombre válido.", "fa-triangle-exclamation");
-            }
-        }
-
-        function switchTab(tabId) {
-            ['home', 'search', 'register', 'map', 'pilots'].forEach(id => {
-                document.getElementById(`screen-${id}`).classList.add('hidden');
-                document.getElementById(`screen-${id}`).classList.remove('screen-fade');
-            });
-            
-            const selectedScreen = document.getElementById(`screen-${tabId}`);
-            selectedScreen.classList.remove('hidden');
-            void selectedScreen.offsetWidth; 
-            selectedScreen.classList.add('screen-fade');
-            
-            document.getElementById('bottom-nav').classList.remove('hidden');
-
-            const btns = document.querySelectorAll('.nav-btn');
-            btns.forEach(btn => {
-                btn.classList.remove('text-imade-dark');
-                btn.classList.add('text-gray-400');
-            });
-
-            const activeBtn = Array.from(btns).find(btn => btn.getAttribute('onclick').includes(tabId));
-            if(activeBtn) {
-                activeBtn.classList.remove('text-gray-400');
-                activeBtn.classList.add('text-imade-dark');
-            }
-
-            if (tabId === 'search') filterClients(); 
-            
-            if (tabId === 'register') {
-                document.getElementById('reg-pilot').value = localStorage.getItem('imade_pilot_name') || 'Anónimo';
-            }
-            
-            if (tabId === 'pilots') {
-                setTimeout(() => {
-                    if (pilotsMap) pilotsMap.invalidateSize(); 
-                    if (window.renderPilotsMap) window.renderPilotsMap(window.latestPilots || []);
-                    if (pilotsMap && window.userLat && window.userLng) {
-                        pilotsMap.setView([window.userLat, window.userLng], 14);
-                    }
-                }, 300);
-            }
-        }
-
-        window.sheetExpanded = false;
-        window.toggleSheet = function() {
-            const sheet = document.getElementById('bottom-sheet');
-            const details = document.getElementById('sheet-details');
-            window.sheetExpanded = !window.sheetExpanded;
-            
-            if (window.sheetExpanded) {
-                sheet.classList.remove('translate-y-[calc(100%-160px)]');
-                sheet.classList.add('translate-y-0');
-                details.classList.remove('opacity-0');
-                details.classList.add('opacity-100');
-            } else {
-                sheet.classList.add('translate-y-[calc(100%-160px)]');
-                sheet.classList.remove('translate-y-0');
-                details.classList.remove('opacity-100');
-                details.classList.add('opacity-0');
-                details.scrollTop = 0; 
-            }
-        };
-
-        window.centerPilotsMap = function() {
-            if (pilotsMap && window.userLat && window.userLng) {
-                pilotsMap.flyTo([window.userLat, window.userLng], 14, { animate: true, duration: 1 });
-            } else {
-                showToast("Buscando...", "Aún no tenemos tu ubicación GPS.", "fa-location-crosshairs");
-            }
-        }
-
-        window.calculateDistance = function(lat1, lon1, lat2, lon2) {
-            if(!lat1 || !lon1 || !lat2 || !lon2) return null;
-            const R = 6371; 
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
-        }
-
-        function closeMap() {
-            document.getElementById('screen-map').classList.add('hidden');
-            document.getElementById('screen-search').classList.remove('hidden');
-            document.getElementById('bottom-nav').classList.remove('hidden');
-            if(window.sheetExpanded) window.toggleSheet();
-        }
-
-        function openGpsModal() {
-            if(!gpsAlertShown) {
-                document.getElementById('gps-modal').classList.remove('hidden');
-                gpsAlertShown = true;
-            }
-        }
-        function closeGpsModal() { document.getElementById('gps-modal').classList.add('hidden'); }
-
-        function requestLocation() {
+        window.requestLocation = function() {
             if ("geolocation" in navigator) {
                 navigator.geolocation.watchPosition(
                     (position) => {
@@ -1251,7 +926,8 @@
                             pilotIcon.className = `w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors bg-green-50 text-green-500`;
                         }
 
-                        if(window.updatePilotLocation && document.getElementById('sos-active-modal').classList.contains('hidden')){
+                        // Actualiza Firebase SOLAMENTE si no estás en medio de un SOS (ya que el SOS tiene su propia actualización)
+                        if(window.updatePilotLocation && document.getElementById('sos-active-modal').classList.contains('hidden') && document.getElementById('sos-countdown-modal').classList.contains('hidden')){
                             window.updatePilotLocation(window.userLat, window.userLng, 'activo', '', '');
                         }
 
@@ -1290,7 +966,7 @@
                     { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 } // Ajustado para ser más rápido en reportar
                 );
             }
-        }
+        };
 
         // =========================================================================
         // MAPA DE FLOTA MEJORADO (TRAYECTORIAS, VELOCIDAD, CAMIONES MULTICOLOR Y BURBUJA RESPONSIVE)
