@@ -33,9 +33,21 @@
                             card: '#ffffff'
                         }
                     },
+                    keyframes: {
+                        floating: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-8px)' },
+                        },
+                        slideInRight: {
+                            '0%': { opacity: '0', transform: 'translateX(20px)' },
+                            '100%': { opacity: '1', transform: 'translateX(0)' },
+                        }
+                    },
                     animation: {
                         'ping-slow': 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite',
                         'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'floating': 'floating 3s ease-in-out infinite',
+                        'slideIn': 'slideInRight 0.4s ease-out forwards',
                     }
                 }
             }
@@ -101,10 +113,17 @@
 
         /* Path Animation for Map Trails */
         .leaflet-interactive { transition: stroke-dashoffset 1s linear; }
+        
+        @keyframes dashLine {
+            to { stroke-dashoffset: -40; }
+        }
+        .animated-route {
+            animation: dashLine 2s linear infinite;
+        }
     </style>
 
     <script>
-        const APP_VERSION = "2.0"; 
+        const APP_VERSION = "2.1"; 
         const currentVersion = localStorage.getItem('imade_app_version');
         
         if (currentVersion !== APP_VERSION) {
@@ -131,7 +150,8 @@
 
     <!-- PANTALLA DE INSTALACIÓN OBLIGATORIA (PWA) -->
     <div id="install-screen" class="fixed inset-0 z-[99999] bg-white flex flex-col items-center justify-center p-6 text-center hidden">
-        <img src="https://cdn-icons-png.flaticon.com/512/854/854878.png" alt="RutasApp" class="w-32 h-32 rounded-3xl shadow-2xl mb-6 object-cover bg-blue-50 p-4">
+        <!-- SE APLICÓ EL LOGO app.jpg EXTERNO AQUÍ -->
+        <img src="app.jpg" alt="RutasApp" class="w-36 h-36 rounded-[2.5rem] shadow-2xl mb-6 object-cover bg-blue-50 border-4 border-gray-50/50" onerror="this.src='https://cdn-icons-png.flaticon.com/512/854/854878.png'">
         <h2 class="text-3xl font-black text-imade-dark mb-3 tracking-tight">Instala RutasApp</h2>
         <p class="text-gray-500 mb-8 font-medium px-4 leading-relaxed text-sm">Para continuar y garantizar que el GPS funcione en tiempo real, instala la aplicación dando clic en el botón de abajo.</p>
         
@@ -179,35 +199,40 @@
         </div>
     </div>
 
-    <!-- 1. NUEVO: SELECCIÓN DE MOTIVO S.O.S -->
+    <!-- 1. SELECCIÓN DE MOTIVO S.O.S (Opciones Centradas y Mejoradas) -->
     <div id="sos-reason-modal" class="fixed inset-0 bg-black/90 z-[99990] hidden flex-col items-center justify-center backdrop-blur-xl px-4 text-center transition-all">
         <h2 class="text-3xl font-black text-white mb-2 tracking-tight drop-shadow-md mt-4">¿Cuál es la emergencia?</h2>
         <p class="text-gray-300 text-sm font-medium mb-8">Selecciona un motivo para alertar a la flota.</p>
         
-        <div class="w-full max-w-sm grid grid-cols-1 gap-3 px-2">
-            <button onclick="startSosCountdown('💥 Choque o Accidente')" class="bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 text-white font-bold py-4 px-6 rounded-2xl flex items-center gap-4 transition-all active:scale-95 backdrop-blur-sm">
-                <span class="text-3xl bg-red-500/20 p-2 rounded-xl border border-red-500/30">💥</span> <span class="text-lg text-left">Choque / Accidente</span>
+        <div class="w-full max-w-sm flex flex-col gap-4 px-2 mx-auto">
+            <button onclick="startSosCountdown('💥 Choque o Accidente')" class="bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 text-white font-bold py-3.5 px-5 rounded-2xl flex items-center justify-start gap-5 transition-all active:scale-95 backdrop-blur-md shadow-lg w-full">
+                <div class="w-14 h-14 bg-red-500/20 rounded-xl border border-red-500/30 flex items-center justify-center text-3xl shrink-0">💥</div> 
+                <span class="text-lg text-left leading-tight">Choque o<br>Accidente</span>
             </button>
-            <button onclick="startSosCountdown('⚠️ Asalto o Robo')" class="bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 text-white font-bold py-4 px-6 rounded-2xl flex items-center gap-4 transition-all active:scale-95 backdrop-blur-sm">
-                <span class="text-3xl bg-orange-500/20 p-2 rounded-xl border border-orange-500/30">⚠️</span> <span class="text-lg text-left">Asalto / Robo</span>
+            <button onclick="startSosCountdown('⚠️ Asalto o Robo')" class="bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 text-white font-bold py-3.5 px-5 rounded-2xl flex items-center justify-start gap-5 transition-all active:scale-95 backdrop-blur-md shadow-lg w-full">
+                <div class="w-14 h-14 bg-orange-500/20 rounded-xl border border-orange-500/30 flex items-center justify-center text-3xl shrink-0">⚠️</div> 
+                <span class="text-lg text-left leading-tight">Asalto o<br>Robo en Ruta</span>
             </button>
-            <button onclick="startSosCountdown('🚑 Emergencia Médica')" class="bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 text-white font-bold py-4 px-6 rounded-2xl flex items-center gap-4 transition-all active:scale-95 backdrop-blur-sm">
-                <span class="text-3xl bg-blue-500/20 p-2 rounded-xl border border-blue-500/30">🚑</span> <span class="text-lg text-left">Emergencia Médica</span>
+            <button onclick="startSosCountdown('🚑 Emergencia Médica')" class="bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 text-white font-bold py-3.5 px-5 rounded-2xl flex items-center justify-start gap-5 transition-all active:scale-95 backdrop-blur-md shadow-lg w-full">
+                <div class="w-14 h-14 bg-blue-500/20 rounded-xl border border-blue-500/30 flex items-center justify-center text-3xl shrink-0">🚑</div> 
+                <span class="text-lg text-left leading-tight">Emergencia<br>Médica</span>
             </button>
-            <button onclick="startSosCountdown('🛠️ Falla Mecánica')" class="bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 text-white font-bold py-4 px-6 rounded-2xl flex items-center gap-4 transition-all active:scale-95 backdrop-blur-sm">
-                <span class="text-3xl bg-gray-500/20 p-2 rounded-xl border border-gray-500/30">🛠️</span> <span class="text-lg text-left">Falla Mecánica</span>
+            <button onclick="startSosCountdown('🛠️ Falla Mecánica')" class="bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 text-white font-bold py-3.5 px-5 rounded-2xl flex items-center justify-start gap-5 transition-all active:scale-95 backdrop-blur-md shadow-lg w-full">
+                <div class="w-14 h-14 bg-gray-500/20 rounded-xl border border-gray-500/30 flex items-center justify-center text-3xl shrink-0">🛠️</div> 
+                <span class="text-lg text-left leading-tight">Falla<br>Mecánica</span>
             </button>
-            <button onclick="startSosCountdown('⛽ Sin Combustible')" class="bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 text-white font-bold py-4 px-6 rounded-2xl flex items-center gap-4 transition-all active:scale-95 backdrop-blur-sm">
-                <span class="text-3xl bg-yellow-500/20 p-2 rounded-xl border border-yellow-500/30">⛽</span> <span class="text-lg text-left">Sin Combustible</span>
+            <button onclick="startSosCountdown('⛽ Sin Combustible')" class="bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 text-white font-bold py-3.5 px-5 rounded-2xl flex items-center justify-start gap-5 transition-all active:scale-95 backdrop-blur-md shadow-lg w-full">
+                <div class="w-14 h-14 bg-yellow-500/20 rounded-xl border border-yellow-500/30 flex items-center justify-center text-3xl shrink-0">⛽</div> 
+                <span class="text-lg text-left leading-tight">Me quedé sin<br>Combustible</span>
             </button>
         </div>
 
-        <button onclick="closeSosMenu()" class="mt-8 text-white/50 font-bold py-3 px-8 rounded-full border border-white/20 hover:bg-white/10 active:scale-95 transition-all">
+        <button onclick="closeSosMenu()" class="mt-8 text-white/60 font-bold py-3 px-8 rounded-full border border-white/20 hover:bg-white/10 active:scale-95 transition-all shadow-inner">
             Cancelar
         </button>
     </div>
 
-    <!-- 2. NUEVO: CUENTA REGRESIVA S.O.S -->
+    <!-- 2. CUENTA REGRESIVA S.O.S -->
     <div id="sos-countdown-modal" class="fixed inset-0 bg-red-900/95 z-[99991] hidden flex-col items-center justify-center backdrop-blur-xl px-6 text-center">
         <h2 class="text-3xl font-black text-white mb-2 tracking-tight">ENVIANDO ALERTA EN...</h2>
         <p id="sos-selected-reason" class="text-red-200 text-lg font-bold mb-8 bg-black/30 px-6 py-2 rounded-full border border-red-500/30">Motivo</p>
@@ -239,7 +264,7 @@
         </button>
     </div>
 
-    <!-- ANUNCIO S.O.S RECIBIDO (MEDIA PANTALLA) MEJORADO -->
+    <!-- ANUNCIO S.O.S RECIBIDO (MEDIA PANTALLA) -->
     <div id="sos-receive-modal" class="fixed inset-x-0 top-0 h-[50dvh] bg-red-600/95 backdrop-blur-2xl z-[99996] hidden flex flex-col items-center justify-center p-6 text-center shadow-[0_20px_50px_rgba(220,38,38,0.5)] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] -translate-y-full rounded-b-[40px] border-b-4 border-red-400">
         <button onclick="dismissSosBanner()" class="absolute top-8 right-6 w-12 h-12 bg-black/20 rounded-full text-white flex items-center justify-center hover:bg-black/40 transition-colors active:scale-90 border border-white/20">
             <i class="fa-solid fa-xmark text-2xl"></i>
@@ -319,7 +344,6 @@
                 }
             });
 
-            // Función actualizada para incluir Path y Speed
             window.updatePilotLocation = async (lat, lng, status, reason = '') => {
                 if(!window.currentUser || !window.firebaseDb) return;
                 try {
@@ -376,7 +400,6 @@
                         window.dismissSosBanner();
                     }
 
-                    // LÓGICA DE NOTIFICACIONES MEJORADA
                     if (anySOS && !window.wasSosActive && activeSosPilots.length > 0) {
                         let sosPilot = activeSosPilots[0];
                         let dist = window.calculateDistance ? window.calculateDistance(window.userLat, window.userLng, sosPilot.lat, sosPilot.lng) : null;
@@ -477,7 +500,8 @@
             <div id="screen-home" class="screen w-full h-full flex flex-col px-5 py-3 overflow-hidden">
                 
                 <div class="flex flex-col items-center justify-center mt-1 mb-3">
-                    <img src="https://cdn-icons-png.flaticon.com/512/854/854878.png" alt="Grupo Imade" class="h-16 object-contain mb-3 filter drop-shadow-sm p-2 bg-blue-50 rounded-2xl" onerror="this.style.display='none'">
+                    <!-- SE APLICÓ EL LOGO logo.png INTERNO AQUÍ Y SE AÑADIÓ ANIMACIÓN FLOTANTE -->
+                    <img src="logo.png" alt="Grupo Imade" class="h-16 object-contain mb-3 filter drop-shadow-md animate-floating" onerror="this.src='https://cdn-icons-png.flaticon.com/512/854/854878.png'">
                     <h2 class="text-2xl font-black text-imade-dark text-center tracking-tight">¡Bienvenido!</h2>
                 </div>
                 
@@ -507,7 +531,7 @@
                             <i class="fa-solid fa-satellite-dish text-sm animate-pulse"></i>
                         </div>
                         <div class="z-10">
-                            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Satelital <span id="home-speed" class="text-imade-light ml-1">0 km/h</span></p>
+                            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Satelital <span id="home-speed" class="text-imade-light ml-1 font-black bg-blue-50 px-1 rounded">0 km/h</span></p>
                             <p id="home-gps-status" class="text-[11px] font-bold text-gray-600 leading-tight">Buscando...</p>
                         </div>
                     </div>
@@ -538,7 +562,7 @@
                         <i class="fa-solid fa-laptop-code text-imade-light"></i>
                         <span>Creado por <strong>Depto. de IT</strong></span>
                     </div>
-                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest" id="app-version-text">Versión 2.0</p>
+                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest" id="app-version-text">Versión 2.1</p>
                 </div>
             </div>
 
@@ -564,7 +588,7 @@
                         </div>
                     </div>
                 </div>
-                <div id="client-list" class="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar pb-6"></div>
+                <div id="client-list" class="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar pb-6 overflow-x-hidden"></div>
             </div>
 
             <!-- PANTALLA 3: MAPA DE RUTA (CON FICHA DESPLEGABLE) -->
@@ -573,7 +597,7 @@
                     <button onclick="closeMap()" class="bg-white/90 backdrop-blur-xl w-12 h-12 rounded-full shadow-lg text-imade-dark hover:bg-gray-50 flex items-center justify-center transition-transform active:scale-90 pointer-events-auto border border-white/50">
                         <i class="fa-solid fa-arrow-left text-lg"></i>
                     </button>
-                    <button onclick="centerMap()" class="bg-white/90 backdrop-blur-xl w-12 h-12 rounded-full shadow-lg text-imade-light hover:bg-gray-50 flex items-center justify-center transition-transform active:scale-90 pointer-events-auto border border-white/50">
+                    <button onclick="centerMap()" class="bg-white/90 backdrop-blur-xl w-12 h-12 rounded-full shadow-lg text-imade-light hover:bg-gray-50 flex items-center justify-center transition-transform active:scale-90 pointer-events-auto border border-white/50 animate-pulse-fast">
                         <i class="fa-solid fa-location-crosshairs text-lg"></i>
                     </button>
                 </div>
@@ -582,7 +606,7 @@
                     <div id="map" class="absolute inset-0"></div>
                     <div id="route-loader" class="absolute inset-0 bg-white/50 backdrop-blur-md z-[400] flex flex-col items-center justify-center hidden">
                         <div class="w-16 h-16 bg-white rounded-3xl shadow-2xl flex items-center justify-center mb-4 border border-blue-50"><div class="loader"></div></div>
-                        <p class="font-bold text-imade-dark bg-white/90 backdrop-blur-md px-5 py-2 rounded-full text-sm shadow-sm">Calculando ruta óptima...</p>
+                        <p class="font-bold text-imade-dark bg-white/90 backdrop-blur-md px-5 py-2 rounded-full text-sm shadow-sm animate-pulse">Calculando ruta...</p>
                     </div>
                 </div>
                 
@@ -684,7 +708,7 @@
                 </div>
                 <div class="flex-1 w-full relative">
                     <div id="map-pilots" class="absolute inset-0 bg-gray-100"></div>
-                    <button onclick="window.centerPilotsMap()" class="absolute bottom-6 right-4 z-[400] bg-white/90 backdrop-blur-xl w-14 h-14 rounded-full shadow-lg text-imade-dark hover:bg-gray-50 flex items-center justify-center transition-transform active:scale-90 border border-white/50">
+                    <button onclick="window.centerPilotsMap()" class="absolute bottom-6 right-4 z-[400] bg-white/90 backdrop-blur-xl w-14 h-14 rounded-full shadow-lg text-imade-dark hover:bg-gray-50 flex items-center justify-center transition-transform active:scale-90 border border-white/50 animate-pulse-fast">
                         <i class="fa-solid fa-location-crosshairs text-xl"></i>
                     </button>
                 </div>
@@ -864,6 +888,14 @@
         let pilotsMap = null;
         let pilotMarkers = {};
         let pilotPolylines = {};
+
+        // Función para generar un color único basado en un texto (ID del piloto)
+        function getColorForId(idStr) {
+            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#0ea5e9'];
+            let hash = 0;
+            for(let i = 0; i < idStr.length; i++) hash += idStr.charCodeAt(i);
+            return colors[hash % colors.length];
+        }
 
         window.requestAllPermissions = function() {
             if ('Notification' in window) {
@@ -1250,7 +1282,7 @@
         }
 
         // =========================================================================
-        // MAPA DE FLOTA MEJORADO (TRAYECTORIAS Y VELOCIDAD)
+        // MAPA DE FLOTA MEJORADO (TRAYECTORIAS, VELOCIDAD, CAMIONES MULTICOLOR Y RESPONSIVE)
         // =========================================================================
         window.renderPilotsMap = function(pilots = []) {
             let startLat = window.userLat || 14.6349;
@@ -1296,9 +1328,12 @@
                 if (pilot.status === 'inactivo' || pilot.lat === 0) return; 
 
                 const isSOS = pilot.status === 'SOS';
-                const baseColor = isSOS ? '#ef4444' : '#36a8e1';
+                // Usar color único para el camión o Imade Dark para uno mismo
+                let baseColor = isSOS ? '#ef4444' : getColorForId(pilot.id);
+                if (pilot.id === myId && !isSOS) baseColor = '#22387a'; // Tú en color corporativo
+
                 const pulseClass = isSOS ? 'sos-danger-blink' : '';
-                const iconCls = isSOS ? 'fa-triangle-exclamation' : 'fa-truck-fast';
+                const iconCls = 'fa-truck'; // Icono de camión
                 const speed = pilot.speed || 0;
 
                 // Dibujar Trayectoria (Path)
@@ -1310,23 +1345,28 @@
                             color: baseColor,
                             weight: 4,
                             opacity: 0.6,
-                            dashArray: isSOS ? '10, 10' : ''
+                            dashArray: '10, 10',
+                            className: 'animated-route'
                         }).addTo(pilotsMap);
                     }
                 }
 
-                // Dibujar Marcador (Mejorado con Velocidad)
+                // Dibujar Marcador (Burbuja ancha y texto responsive)
+                // Se centra perfectamente usando iconAnchor y flex layout
                 const iconHtml = `
-                    <div class="${pulseClass}" style='background-color:${baseColor}; width:32px; height:32px; border-radius:50%; border:3px solid white; box-shadow:0 5px 15px rgba(0,0,0,0.3); display:flex; justify-content:center; align-items:center; transition: all 0.3s; position:relative; z-index: 1000;'>
-                        <i class='fa-solid ${iconCls}' style='color:white; font-size:13px;'></i>
-                    </div>
-                    <div style="background: rgba(255,255,255,0.95); backdrop-filter: blur(4px); font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 12px; margin-top: 6px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); white-space: nowrap; transform: translateX(-35%); border: 1px solid #e2e8f0; color: #1e293b; position:relative; z-index:999; display: flex; flex-direction: column; align-items: center; line-height: 1.2;">
-                        <span>${pilot.name} ${isSOS ? '<span style="color:red; animation: ping 1s infinite;">🚨</span>' : ''}</span>
-                        <span style="color: #64748b; font-size: 9px; font-weight: 700; margin-top: 1px;">${speed} km/h</span>
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
+                        <div class="${pulseClass}" style='background-color:${baseColor}; width:36px; height:36px; border-radius:50%; border:3px solid white; box-shadow:0 6px 16px rgba(0,0,0,0.4); display:flex; justify-content:center; align-items:center; transition: all 0.3s; z-index: 1000;'>
+                            <i class='fa-solid ${iconCls}' style='color:white; font-size:14px;'></i>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); padding: 4px 10px; border-radius: 14px; margin-top: 6px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid #e2e8f0; color: #1e293b; max-width: 150px; width: max-content; display: flex; flex-direction: column; align-items: center; line-height: 1.2;">
+                            <span style="font-size: 11px; font-weight: 800; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${pilot.name} ${isSOS ? '<span style="color:red; animation: ping 1s infinite;">🚨</span>' : ''}</span>
+                            <span style="color: #64748b; font-size: 9px; font-weight: 700; margin-top: 1px;">${speed} km/h</span>
+                        </div>
                     </div>
                 `;
 
-                const icon = L.divIcon({ className: 'custom-div-icon', html: iconHtml, iconSize: [32, 32], iconAnchor: [16, 16] });
+                // iconSize grande para permitir que el HTML se centre por sí solo y el ancla apunte al centro.
+                const icon = L.divIcon({ className: 'custom-div-icon', html: iconHtml, iconSize: [160, 100], iconAnchor: [80, 18] });
 
                 if (pilotMarkers[pilot.id]) {
                     pilotMarkers[pilot.id].setLatLng([pilot.lat, pilot.lng]);
@@ -1378,7 +1418,7 @@
                 container.innerHTML = `<div class="flex flex-col items-center justify-center py-16 text-gray-400"><i class="fa-solid fa-folder-open text-5xl mb-4 opacity-40"></i><p class="font-bold text-gray-500">Ningún cliente encontrado</p></div>`;
                 return;
             }
-            list.forEach(client => {
+            list.forEach((client, index) => {
                 const initial = client.nombre ? client.nombre.charAt(0).toUpperCase() : 'C';
                 let distBadge = '';
                 if (client.distancia !== null && client.distancia !== undefined) {
@@ -1392,7 +1432,8 @@
                 if (!subtext) subtext = "Sin dirección";
 
                 const card = document.createElement('div');
-                card.className = "bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4 active:scale-95 transition-transform cursor-pointer hover:border-blue-200";
+                card.className = "bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4 active:scale-95 transition-transform cursor-pointer hover:border-blue-200 animate-slideIn opacity-0";
+                card.style.animationDelay = `${index * 0.05}s`; // Animación en cascada
                 card.onclick = () => selectClientForRoute(client);
                 card.innerHTML = `<div class="w-12 h-12 rounded-2xl bg-gray-50 text-imade-dark flex items-center justify-center font-black text-lg shrink-0 border border-gray-200">${initial}</div><div class="flex-1 min-w-0"><div class="flex justify-between items-start mb-0.5"><h3 class="font-bold text-gray-900 text-[13px] truncate leading-tight">${client.nombre || 'Sin Nombre'}</h3>${distBadge}</div><p class="text-[11px] text-gray-500 truncate mt-1 font-medium"><span class="font-bold text-gray-800 bg-gray-100 px-1.5 py-0.5 rounded mr-1"># ${client.codigo || 'S/N'}</span> ${subtext}</p></div>`;
                 container.appendChild(card);
@@ -1497,7 +1538,7 @@
             if (routingControl) map.removeControl(routingControl);
             const userIcon = L.divIcon({ className: 'custom-div-icon', html: "<div style='background-color:#36a8e1; width:20px; height:20px; border-radius:50%; border:3px solid white; box-shadow:0 3px 8px rgba(0,0,0,0.3);'></div>", iconSize: [20, 20], iconAnchor: [10, 10] });
             const clientIcon = L.divIcon({ className: 'custom-div-icon', html: "<div style='background-color:#22387a; width:34px; height:34px; border-radius:50%; border:3px solid white; box-shadow:0 4px 10px rgba(0,0,0,0.4); display:flex; justify-content:center; align-items:center;'><i class='fa-solid fa-store' style='color:white; font-size:14px;'></i></div>", iconSize: [34, 34], iconAnchor: [17, 17] });
-            routingControl = L.Routing.control({ waypoints: [ L.latLng(startLat, startLng), L.latLng(selectedClient.lat, selectedClient.lng) ], router: L.Routing.osrmv1({ language: 'es', profile: 'driving' }), lineOptions: { styles: [{color: '#36a8e1', opacity: 0.9, weight: 6}] }, createMarker: function(i, waypoint, n) { return L.marker(waypoint.latLng, { icon: (i === 0) ? userIcon : clientIcon }); }, addWaypoints: false, draggableWaypoints: false, fitSelectedRoutes: true, showAlternatives: false }).addTo(map);
+            routingControl = L.Routing.control({ waypoints: [ L.latLng(startLat, startLng), L.latLng(selectedClient.lat, selectedClient.lng) ], router: L.Routing.osrmv1({ language: 'es', profile: 'driving' }), lineOptions: { styles: [{color: '#36a8e1', opacity: 0.9, weight: 6, className: 'animated-route'}] }, createMarker: function(i, waypoint, n) { return L.marker(waypoint.latLng, { icon: (i === 0) ? userIcon : clientIcon }); }, addWaypoints: false, draggableWaypoints: false, fitSelectedRoutes: true, showAlternatives: false }).addTo(map);
             routingControl.on('routesfound', function(e) { document.getElementById('route-loader').classList.add('hidden'); });
             routingControl.on('routingerror', function(e) { document.getElementById('route-loader').classList.add('hidden'); showToast("Error", "No se pudo trazar ruta."); });
         }
