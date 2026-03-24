@@ -208,28 +208,32 @@
     <!-- Firebase Real-time Integration -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         window.latestPilots = [];
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'rutas-imade-pro';
-        const configStr = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
+        const configStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
         
         let firebaseConfig = {};
-        try { firebaseConfig = JSON.parse(configStr); } catch(e) {}
-
+        
         // =====================================================================
         // CONFIGURACIÓN DE FIREBASE
         // =====================================================================
-        firebaseConfig = {
-            apiKey: "AIzaSyDCum0Z8j33F2g8aVZxaPIzyWaN1tunSTk",
-            authDomain: "rutasapp-imade.firebaseapp.com",
-            projectId: "rutasapp-imade",
-            storageBucket: "rutasapp-imade.firebasestorage.app",
-            messagingSenderId: "320301869648",
-            appId: "1:320301869648:web:046645830d4b0d036d7f55"
-        };
+        if (configStr) {
+            try { firebaseConfig = JSON.parse(configStr); } catch(e) {}
+        } else {
+            // Configuración de respaldo proporcionada en el código original
+            firebaseConfig = {
+                apiKey: "AIzaSyDCum0Z8j33F2g8aVZxaPIzyWaN1tunSTk",
+                authDomain: "rutasapp-imade.firebaseapp.com",
+                projectId: "rutasapp-imade",
+                storageBucket: "rutasapp-imade.firebasestorage.app",
+                messagingSenderId: "320301869648",
+                appId: "1:320301869648:web:046645830d4b0d036d7f55"
+            };
+        }
 
         if (Object.keys(firebaseConfig).length > 0) {
             const app = initializeApp(firebaseConfig);
@@ -241,7 +245,12 @@
 
             const initAuth = async () => { 
                 try {
-                    await signInAnonymously(auth); 
+                    // Integración robusta según directivas de entornos seguros
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth); 
+                    }
                 } catch(error) {
                     console.error("Error Auth Firebase:", error);
                     setTimeout(() => {
@@ -420,7 +429,7 @@
             <div id="screen-home" class="screen w-full h-full flex flex-col px-5 py-3 overflow-hidden">
                 
                 <div class="flex flex-col items-center justify-center mt-1 mb-3">
-                    <img src="logo.png" alt="Grupo Imade" class="h-16 object-contain mb-3 filter drop-shadow-sm">
+                    <img src="app.jpg" alt="Grupo Imade" class="h-16 object-contain mb-3 filter drop-shadow-sm" onerror="this.style.display='none'">
                     <h2 class="text-2xl font-black text-imade-dark text-center tracking-tight">¡Bienvenido!</h2>
                 </div>
                 
@@ -826,12 +835,12 @@
                             } catch(e) {}
                         }
                     } else {
-                        alert("⚠️ ACCIÓN REQUERIDA: Has denegado las notificaciones. Para tu seguridad y la de la flota, ve a la configuración de tu navegador o celular y ACTIVA las notificaciones para esta app.");
+                        showToast("Acción Requerida", "Has denegado las notificaciones. Actívalas en tu navegador.", "fa-triangle-exclamation", "text-red-500", "bg-red-50 border-red-200");
                         document.getElementById('permissions-modal').classList.add('hidden');
                     }
                 });
             } else {
-                alert("Tu dispositivo no soporta notificaciones nativas (Asegurate de estar en la app instalada y no en Safari).");
+                showToast("Aviso", "Tu dispositivo no soporta notificaciones nativas.", "fa-info-circle");
                 document.getElementById('permissions-modal').classList.add('hidden');
             }
             requestLocation();
@@ -949,7 +958,7 @@
                     window.updatePilotLocation(window.userLat, window.userLng, 'activo');
                 }
             } else {
-                alert("Por favor ingresa un nombre válido.");
+                showToast("Aviso", "Por favor ingresa un nombre válido.", "fa-triangle-exclamation");
             }
         }
 
