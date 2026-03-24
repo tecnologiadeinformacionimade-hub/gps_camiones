@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <!-- ANTI-CACHÉ HEADERS PARA FORZAR ACTUALIZACIÓN AGRESIVA -->
+    <!-- ANTI-CACHÉ HEADERS PARA FORZAR ACTUALIZACIÓN -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -12,7 +12,7 @@
     <title>Gestión de Clientes - Grupo Imade</title>
     
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#22387a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RutasApp">
@@ -32,27 +32,6 @@
                             bg: '#f8fafc',
                             card: '#ffffff'
                         }
-                    },
-                    keyframes: {
-                        floating: {
-                            '0%, 100%': { transform: 'translateY(0)' },
-                            '50%': { transform: 'translateY(-6px)' },
-                        },
-                        slideInRight: {
-                            '0%': { opacity: '0', transform: 'translateX(20px)' },
-                            '100%': { opacity: '1', transform: 'translateX(0)' },
-                        },
-                        popIn: {
-                            '0%': { opacity: '0', transform: 'scale(0.95)' },
-                            '100%': { opacity: '1', transform: 'scale(1)' },
-                        }
-                    },
-                    animation: {
-                        'ping-slow': 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite',
-                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'floating': 'floating 3s ease-in-out infinite',
-                        'slideIn': 'slideInRight 0.4s ease-out forwards',
-                        'popIn': 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
                     }
                 }
             }
@@ -61,7 +40,7 @@
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
@@ -82,7 +61,7 @@
             border-top: 1px solid rgba(255,255,255,0.6);
         }
         .ios-toast {
-            background: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.75);
             backdrop-filter: blur(25px) saturate(180%);
             -webkit-backdrop-filter: blur(25px) saturate(180%);
             border: 1px solid rgba(255, 255, 255, 0.5);
@@ -109,47 +88,39 @@
             background-size: 1em;
         }
 
-        /* Safe Areas para iOS Notches/Islands */
         .pb-safe { padding-bottom: env(safe-area-inset-bottom, 16px); }
-        .pt-safe { padding-top: max(env(safe-area-inset-top, 24px), 24px); }
+        .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
         
         /* Animación agresiva para SOS */
-        @keyframes sosBlink { 0%, 100% { background-color: #ef4444; transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 50% { background-color: #dc2626; transform: scale(1.15); box-shadow: 0 0 20px 10px rgba(239, 68, 68, 0); } }
-        .sos-danger-blink { animation: sosBlink 0.8s cubic-bezier(0.4, 0, 0.6, 1) infinite; border: 3px solid white !important; }
-
-        /* Animación fluida de rutas */
-        .leaflet-interactive { transition: stroke-dashoffset 1s linear; }
-        @keyframes dashLine { to { stroke-dashoffset: -40; } }
-        .animated-route { animation: dashLine 2s linear infinite; }
+        @keyframes sosBlink { 0%, 100% { background-color: #ef4444; transform: scale(1); } 50% { background-color: #991b1b; transform: scale(1.2); } }
+        .sos-danger-blink { animation: sosBlink 0.4s infinite; border: 4px solid white !important; }
     </style>
 
     <script>
-        // =========================================================
-        // SISTEMA DE ACTUALIZACIÓN AGRESIVA - VERSIÓN 2.2.7
-        // =========================================================
-        const APP_VERSION = "2.2.7"; 
+        // =====================================================================
+        // SITEMA DE AUTO-ACTUALIZACIÓN PARA PWAs (VERSIÓN 1.6)
+        // =====================================================================
+        const APP_VERSION = "1.6"; // <-- Versión 1.6: Alarma agresiva en background simulado
         const currentVersion = localStorage.getItem('imade_app_version');
         
         if (currentVersion !== APP_VERSION) {
-            console.log("Nueva versión detectada (" + APP_VERSION + "). Limpiando caché agresivamente...");
+            console.log("Nueva versión detectada. Limpiando caché...");
             localStorage.setItem('imade_app_version', APP_VERSION);
             
-            // Destruir Service Workers antiguos
+            // Borrar Service Workers viejos
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                    for(let registration of registrations) { registration.unregister(); }
-                }).catch(e => console.warn("Error borrando SW:", e));
+                try {
+                    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                        for(let registration of registrations) { registration.unregister(); }
+                    }).catch(e => console.warn("SW getRegistrations error:", e));
+                } catch(e) { console.warn("SW API error:", e); }
             }
-            
-            // Borrar todos los cachés
             if ('caches' in window) {
                 caches.keys().then(function(names) {
                     for (let name of names) caches.delete(name);
                 });
             }
-            
-            // Forzar recarga
-            window.location.href = window.location.href.split('?')[0] + '?v=' + new Date().getTime();
+            window.location.reload(true);
         }
     </script>
 </head>
@@ -157,8 +128,8 @@
 
     <!-- PANTALLA DE INSTALACIÓN OBLIGATORIA (PWA) -->
     <div id="install-screen" class="fixed inset-0 z-[99999] bg-white flex flex-col items-center justify-center p-6 text-center hidden">
-        <img src="app.jpg" alt="RutasApp" class="w-36 h-36 rounded-[2.5rem] shadow-2xl mb-6 object-cover bg-blue-50 border-4 border-gray-50/50" onerror="this.src='https://cdn-icons-png.flaticon.com/512/854/854878.png'">
-        <h2 class="text-3xl font-black text-imade-dark mb-3 tracking-tight">Instala RutasApp</h2>
+        <img src="app.jpg" alt="RutasApp" class="w-32 h-32 rounded-3xl shadow-2xl mb-6 object-cover" onerror="this.src='https://cdn-icons-png.flaticon.com/512/854/854878.png'">
+        <h2 class="text-3xl font-black text-imade-dark mb-3">Instala RutasApp</h2>
         <p class="text-gray-500 mb-8 font-medium px-4 leading-relaxed text-sm">Para continuar y garantizar que el GPS funcione en tiempo real, instala la aplicación dando clic en el botón de abajo.</p>
         
         <button id="btn-install" class="w-full max-w-xs bg-imade-light text-white font-black py-4 rounded-2xl shadow-[0_10px_20px_rgba(54,168,225,0.3)] active:scale-95 transition-transform text-lg flex items-center justify-center">
@@ -205,108 +176,36 @@
         </div>
     </div>
 
-    <!-- ======================================================= -->
-    <!-- 1. DISEÑO COMPACTO Y EXACTO DEL MENÚ S.O.S (SIN SCROLL) -->
-    <!-- ======================================================= -->
-    <div id="sos-reason-modal" class="fixed inset-0 bg-[#080808] z-[99990] hidden flex-col items-center justify-center px-4 transition-all">
-        <div class="animate-popIn w-full max-w-[320px] flex flex-col items-center">
-            <h2 class="text-2xl font-black text-white mb-2 tracking-tight text-center leading-tight">¿Cuál es la<br>emergencia?</h2>
-            <p class="text-gray-400 text-[13px] font-medium mb-5 text-center">Selecciona un motivo para alertar a la flota.</p>
-            
-            <div class="w-full flex flex-col gap-2.5">
-                <button onclick="startSosCountdown('💥', 'Choque o Accidente')" class="bg-[#1c1c1e] hover:bg-[#252528] text-white p-2 rounded-[14px] flex items-center gap-4 transition-all active:scale-95 w-full border border-[#2a2a2c]">
-                    <div class="w-11 h-11 bg-[#2d1a1a] rounded-xl flex items-center justify-center text-xl shrink-0 shadow-inner">💥</div> 
-                    <span class="text-[14px] font-bold text-left leading-tight">Choque o<br>Accidente</span>
-                </button>
-                <button onclick="startSosCountdown('⚠️', 'Asalto o Robo en Ruta')" class="bg-[#1c1c1e] hover:bg-[#252528] text-white p-2 rounded-[14px] flex items-center gap-4 transition-all active:scale-95 w-full border border-[#2a2a2c]">
-                    <div class="w-11 h-11 bg-[#2d2610] rounded-xl flex items-center justify-center text-xl shrink-0 shadow-inner">⚠️</div> 
-                    <span class="text-[14px] font-bold text-left leading-tight">Asalto o<br>Robo en Ruta</span>
-                </button>
-                <button onclick="startSosCountdown('🚑', 'Emergencia Médica')" class="bg-[#1c1c1e] hover:bg-[#252528] text-white p-2 rounded-[14px] flex items-center gap-4 transition-all active:scale-95 w-full border border-[#2a2a2c]">
-                    <div class="w-11 h-11 bg-[#1a202d] rounded-xl flex items-center justify-center text-xl shrink-0 shadow-inner">🚑</div> 
-                    <span class="text-[14px] font-bold text-left leading-tight">Emergencia<br>Médica</span>
-                </button>
-                <button onclick="startSosCountdown('🛠️', 'Falla Mecánica')" class="bg-[#1c1c1e] hover:bg-[#252528] text-white p-2 rounded-[14px] flex items-center gap-4 transition-all active:scale-95 w-full border border-[#2a2a2c]">
-                    <div class="w-11 h-11 bg-[#222222] rounded-xl flex items-center justify-center text-xl shrink-0 shadow-inner">🛠️</div> 
-                    <span class="text-[14px] font-bold text-left leading-tight">Falla<br>Mecánica</span>
-                </button>
-                <button onclick="startSosCountdown('⛽', 'Me quedé sin Combustible')" class="bg-[#1c1c1e] hover:bg-[#252528] text-white p-2 rounded-[14px] flex items-center gap-4 transition-all active:scale-95 w-full border border-[#2a2a2c]">
-                    <div class="w-11 h-11 bg-[#2d1f1a] rounded-xl flex items-center justify-center text-xl shrink-0 shadow-inner">⛽</div> 
-                    <span class="text-[14px] font-bold text-left leading-tight">Me quedé sin<br>Combustible</span>
-                </button>
-            </div>
-
-            <button onclick="closeSosMenu()" class="mt-6 text-white/70 font-semibold py-2.5 px-8 rounded-full border border-[#333] hover:bg-[#1c1c1e] active:scale-95 transition-all text-sm">
-                Cancelar
-            </button>
+    <!-- PANTALLA DE S.O.S ACTIVO (Para quien lo INICIA) -->
+    <div id="sos-active-modal" class="fixed inset-0 bg-red-900/95 z-[99990] hidden flex-col items-center justify-center backdrop-blur-md px-6 text-center">
+        <div class="w-32 h-32 bg-red-500 rounded-full flex items-center justify-center mb-6 animate-pulse shadow-[0_0_50px_rgba(239,68,68,0.6)]">
+            <i class="fa-solid fa-triangle-exclamation text-6xl text-white"></i>
         </div>
-    </div>
-
-    <!-- ======================================================= -->
-    <!-- 2. CUENTA REGRESIVA S.O.S (DISEÑO 3 SEGUNDOS) -->
-    <!-- ======================================================= -->
-    <div id="sos-countdown-modal" class="fixed inset-0 bg-[#7f1d1d] z-[99991] hidden flex-col items-center justify-start pt-[max(env(safe-area-inset-top,60px),60px)] px-6 text-center overflow-hidden">
-        <h2 class="text-[30px] font-black text-white mb-5 tracking-tight leading-tight animate-popIn">ENVIANDO ALERTA<br>EN...</h2>
+        <h2 class="text-3xl font-black text-white mb-2 tracking-tight">S.O.S ACTIVO</h2>
+        <p class="text-red-200 text-sm font-medium mb-8">Tu alerta de emergencia está sonando en toda la flota y tu ubicación está parpadeando en el mapa.</p>
         
-        <div class="bg-black/30 text-white font-bold px-6 py-2.5 rounded-full border border-white/10 flex items-center justify-center gap-2 mb-8 shadow-md animate-popIn">
-            <span id="sos-selected-emoji" class="text-xl">⛽</span>
-            <span id="sos-selected-text" class="text-[15px]">Sin Combustible</span>
-        </div>
+        <div class="text-7xl font-black text-white mb-10 drop-shadow-lg font-mono" id="sos-timer">30</div>
         
-        <div class="relative w-48 h-48 flex items-center justify-center mb-auto animate-popIn">
-            <svg class="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="8"></circle>
-                <circle id="countdown-circle" cx="50" cy="50" r="45" fill="none" stroke="white" stroke-width="8" stroke-dasharray="283" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear"></circle>
-            </svg>
-            <span class="text-[80px] font-black text-white drop-shadow-lg" id="sos-pre-timer">3</span>
-        </div>
-        
-        <button onclick="cancelSosCountdown()" class="w-full max-w-xs bg-white text-[#b91c1c] font-black py-4 rounded-xl shadow-xl active:scale-95 transition-transform text-[17px] mb-12 animate-popIn hover:bg-red-50">
-            CANCELAR ALERTA
+        <button onclick="cancelSOS()" class="w-full max-w-xs bg-white text-red-600 font-black py-4 rounded-full shadow-2xl active:scale-95 transition-transform text-lg border border-red-100">
+            Desactivar Alerta
         </button>
     </div>
 
-    <!-- ======================================================= -->
-    <!-- 3. PANTALLA DE S.O.S ACTIVO EXACTO AL DISEÑO -->
-    <!-- ======================================================= -->
-    <div id="sos-active-modal" class="fixed inset-0 bg-[#dc2626] z-[99992] hidden flex-col items-center justify-center px-6 text-center">
-        <div class="w-40 h-40 bg-white/20 rounded-full flex items-center justify-center mb-8 relative animate-pulse-fast">
-            <div class="w-32 h-32 bg-white rounded-full flex items-center justify-center shadow-2xl relative z-10">
-                <i class="fa-solid fa-triangle-exclamation text-6xl text-[#dc2626]"></i>
-            </div>
-        </div>
-        
-        <h2 class="text-4xl font-black text-white mb-3 tracking-tight drop-shadow-md">S.O.S ACTIVO</h2>
-        <p class="text-white/95 text-lg font-medium mb-14 max-w-[280px] leading-snug drop-shadow-sm">Tu alerta está sonando en toda la flota y tu ubicación está siendo rastreada.</p>
-        
-        <button onclick="finishSOS()" class="w-full max-w-xs bg-transparent text-white border-2 border-white font-black py-3.5 rounded-full active:bg-white/20 transition-all text-lg backdrop-blur-sm">
-            DESACTIVAR ALERTA
-        </button>
-    </div>
-
-    <!-- ANUNCIO S.O.S RECIBIDO (MEDIA PANTALLA) -->
-    <div id="sos-receive-modal" class="fixed inset-x-0 top-0 h-[50dvh] bg-red-600/95 backdrop-blur-2xl z-[99996] hidden flex flex-col items-center justify-center p-6 text-center shadow-[0_20px_50px_rgba(220,38,38,0.5)] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] -translate-y-full rounded-b-[40px] border-b-4 border-red-400 pt-safe">
-        <button onclick="dismissSosBanner()" class="absolute top-10 right-6 w-12 h-12 bg-black/20 rounded-full text-white flex items-center justify-center hover:bg-black/40 transition-colors active:scale-90 border border-white/20">
+    <!-- ANUNCIO S.O.S RECIBIDO (MEDIA PANTALLA) PARA ANDROID/IOS FALLBACK -->
+    <div id="sos-receive-modal" class="fixed inset-x-0 top-0 h-[50dvh] bg-red-600/95 backdrop-blur-xl z-[99996] hidden flex flex-col items-center justify-center p-6 text-center shadow-[0_20px_50px_rgba(220,38,38,0.5)] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] -translate-y-full rounded-b-[40px] border-b-4 border-red-400">
+        <button onclick="dismissSosBanner()" class="absolute top-8 right-6 w-12 h-12 bg-black/20 rounded-full text-white flex items-center justify-center hover:bg-black/40 transition-colors active:scale-90">
             <i class="fa-solid fa-xmark text-2xl"></i>
         </button>
-        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4 animate-pulse text-red-600 shadow-xl relative mt-4">
+        <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-6 animate-pulse text-red-600 shadow-xl relative">
             <div class="absolute inset-0 border-4 border-white rounded-full animate-ping opacity-50"></div>
-            <i class="fa-solid fa-triangle-exclamation text-4xl"></i>
+            <i class="fa-solid fa-triangle-exclamation text-5xl"></i>
         </div>
-        <h2 class="text-2xl font-black text-white mb-2 tracking-tight drop-shadow-md">¡ALERTA S.O.S!</h2>
-        
-        <!-- Badge Motivo -->
-        <div id="sos-receive-reason" class="bg-black/30 text-white font-bold px-4 py-1.5 rounded-full text-sm mb-3 border border-white/20 shadow-inner flex items-center justify-center gap-2">
-            Motivo Desconocido
-        </div>
-
-        <p id="sos-receive-text" class="text-red-100 text-sm font-medium leading-relaxed max-w-xs mx-auto drop-shadow-sm">Un compañero necesita ayuda.</p>
-        <p class="text-white/80 text-xs mt-4 bg-black/20 px-3 py-1 rounded-full"><i class="fa-solid fa-volume-high mr-1"></i> Alarma en curso</p>
+        <h2 class="text-3xl font-black text-white mb-3 tracking-tight drop-shadow-md">¡ALERTA S.O.S!</h2>
+        <p id="sos-receive-text" class="text-red-100 text-base font-medium leading-relaxed max-w-xs mx-auto drop-shadow-sm">Un compañero necesita ayuda.</p>
+        <p class="text-white/60 text-xs mt-6"><i class="fa-solid fa-volume-high mr-1"></i> La alarma y vibración continúan</p>
     </div>
 
-    <!-- ======================================================= -->
-    <!-- FIREBASE INTEGRATION (CONFIGURACIÓN ORIGINAL DEL RESPALDO)-->
-    <!-- ======================================================= -->
+    <!-- Firebase Real-time Integration -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -314,11 +213,16 @@
 
         window.latestPilots = [];
 
-        // Forzamos el ID de la app de tu respaldo para asegurar escritura en el lugar correcto
-        const appId = 'rutas-imade-pro'; 
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'rutas-imade-pro';
+        const configStr = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
         
-        // ¡CONEXIÓN RESTAURADA! - Usando tu Base de Datos original que sí funcionaba
-        const firebaseConfig = {
+        let firebaseConfig = {};
+        try { firebaseConfig = JSON.parse(configStr); } catch(e) {}
+
+        // =====================================================================
+        // CONFIGURACIÓN DE FIREBASE
+        // =====================================================================
+        firebaseConfig = {
             apiKey: "AIzaSyDCum0Z8j33F2g8aVZxaPIzyWaN1tunSTk",
             authDomain: "rutasapp-imade.firebaseapp.com",
             projectId: "rutasapp-imade",
@@ -327,162 +231,168 @@
             appId: "1:320301869648:web:046645830d4b0d036d7f55"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        if (Object.keys(firebaseConfig).length > 0) {
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
 
-        window.firebaseDb = db;
-        window.firebaseAppId = appId;
+            window.firebaseDb = db;
+            window.firebaseAppId = appId;
 
-        // Lógica de Autenticación Exacta al Backup Funcional
-        const initAuth = async () => { 
-            try {
-                await signInAnonymously(auth); 
-            } catch(error) {
-                console.error("Error Auth Firebase:", error);
-            }
-        };
-        initAuth();
-
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                window.currentUser = user;
-                window.startPilotsListener();
-                if (window.userLat && window.userLng) {
-                    window.updatePilotLocation(window.userLat, window.userLng, 'activo');
+            const initAuth = async () => { 
+                try {
+                    await signInAnonymously(auth); 
+                } catch(error) {
+                    console.error("Error Auth Firebase:", error);
+                    setTimeout(() => {
+                        showToast("⚠️ Falta un paso en Firebase", "Ve a tu proyecto > Authentication > y Activa el método 'Anónimo'.", "fa-triangle-exclamation", "text-red-500", "bg-red-50 border-red-200");
+                    }, 2000);
                 }
-            }
-        });
+            };
+            initAuth();
 
-        // Escribimos en BD con los nuevos campos de Motivo y Emoji
-        window.updatePilotLocation = async (lat, lng, status, reason = '', emoji = '') => {
-            if(!window.currentUser || !window.firebaseDb) return;
-            try {
-                const pilotRef = doc(window.firebaseDb, 'artifacts', window.firebaseAppId, 'public', 'data', 'pilotos', window.currentUser.uid);
-                await setDoc(pilotRef, {
-                    lat, lng, status,
-                    reason: reason,
-                    emoji: emoji,
-                    speed: window.userSpeed || 0,
-                    path: window.myPath || [],
-                    name: localStorage.getItem('imade_pilot_name') || "Piloto Anónimo",
-                    timestamp: Date.now()
-                });
-            } catch(error) {
-                console.error("Error guardando en BD:", error);
-            }
-        };
-
-        window.dismissSosBanner = function() {
-            const sosBanner = document.getElementById('sos-receive-modal');
-            sosBanner.classList.remove('translate-y-0');
-            sosBanner.classList.add('-translate-y-full');
-            setTimeout(() => { sosBanner.classList.add('hidden'); }, 500);
-        };
-
-        window.startPilotsListener = () => {
-            const pilotsCol = collection(window.firebaseDb, 'artifacts', window.firebaseAppId, 'public', 'data', 'pilotos');
-            
-            onSnapshot(pilotsCol, (snapshot) => {
-                const pilots = [];
-                const now = Date.now();
-                let anySOS = false; 
-                let activeSosPilots = [];
-
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    if (now - data.timestamp < 3600000) { 
-                        pilots.push({...data, id: doc.id});
-                        // Si alguien más manda un SOS
-                        if(data.status === 'SOS' && doc.id !== window.currentUser.uid) {
-                            anySOS = true;
-                            activeSosPilots.push({...data, id: doc.id});
-                        }
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    window.currentUser = user;
+                    window.startPilotsListener();
+                    if (window.userLat && window.userLng) {
+                        window.updatePilotLocation(window.userLat, window.userLng, 'activo');
                     }
-                });
-
-                window.latestPilots = pilots;
-
-                if (window.renderPilotsMap && !document.getElementById('screen-pilots').classList.contains('hidden')) {
-                    window.renderPilotsMap(pilots);
                 }
+            });
+
+            window.updatePilotLocation = async (lat, lng, status) => {
+                if(!window.currentUser || !window.firebaseDb) return;
+                try {
+                    const pilotRef = doc(window.firebaseDb, 'artifacts', window.firebaseAppId, 'public', 'data', 'pilotos', window.currentUser.uid);
+                    await setDoc(pilotRef, {
+                        lat, lng, status,
+                        name: localStorage.getItem('imade_pilot_name') || "Piloto Anónimo",
+                        timestamp: Date.now()
+                    });
+                } catch(error) {
+                    console.error("Error al escribir en la base de datos:", error);
+                }
+            };
+
+            // Función para ocultar el anuncio de SOS manualmente (El sonido no se apaga aquí)
+            window.dismissSosBanner = function() {
+                const sosBanner = document.getElementById('sos-receive-modal');
+                sosBanner.classList.remove('translate-y-0');
+                sosBanner.classList.add('-translate-y-full');
+                setTimeout(() => { sosBanner.classList.add('hidden'); }, 500);
+            };
+
+            window.startPilotsListener = () => {
+                const pilotsCol = collection(window.firebaseDb, 'artifacts', window.firebaseAppId, 'public', 'data', 'pilotos');
                 
-                if (window.manageSOSAudio) window.manageSOSAudio(anySOS); 
+                onSnapshot(pilotsCol, (snapshot) => {
+                    const pilots = [];
+                    const now = Date.now();
+                    let anySOS = false; 
+                    let activeSosPilots = [];
 
-                if (!anySOS && window.wasSosActive) {
-                    window.dismissSosBanner();
-                }
-
-                // Desplegar Modal de Emergencia en todos los dispositivos
-                if (anySOS && !window.wasSosActive && activeSosPilots.length > 0) {
-                    let sosPilot = activeSosPilots[0];
-                    let dist = window.calculateDistance ? window.calculateDistance(window.userLat, window.userLng, sosPilot.lat, sosPilot.lng) : null;
-                    let distStr = dist ? dist.toFixed(1) + ' km' : 'distancia desconocida';
-                    let reasonText = sosPilot.reason || "Emergencia S.O.S";
-                    let emoji = sosPilot.emoji || '🚨';
-                    
-                    document.getElementById('sos-receive-reason').innerHTML = `<span>${emoji}</span> <span>${reasonText}</span>`;
-                    document.getElementById('sos-receive-text').innerHTML = `<strong>${sosPilot.name}</strong> solicita apoyo a <strong>${distStr}</strong>.<br><span class="text-sm opacity-80 mt-1 block">Velocidad actual: ${sosPilot.speed || 0} km/h</span>`;
-                    
-                    const sosBanner = document.getElementById('sos-receive-modal');
-                    sosBanner.classList.remove('hidden');
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(() => {
-                            sosBanner.classList.remove('-translate-y-full');
-                            sosBanner.classList.add('translate-y-0');
-                        });
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (now - data.timestamp < 3600000) { 
+                           pilots.push({...data, id: doc.id});
+                           if(data.status === 'SOS' && doc.id !== window.currentUser.uid) {
+                               anySOS = true;
+                               activeSosPilots.push({...data, id: doc.id});
+                           }
+                        }
                     });
 
-                    if (window.requestWakeLock) window.requestWakeLock();
+                    window.latestPilots = pilots;
 
-                    const notifTitle = "🚨 ALERTA S.O.S 🚨";
-                    const notifOptions = {
-                        body: `${reasonText} - ${sosPilot.name} a ${distStr}.`,
-                        icon: "https://cdn-icons-png.flaticon.com/512/854/854878.png",
-                        badge: "https://cdn-icons-png.flaticon.com/512/854/854878.png",
-                        vibrate: [500, 250, 500, 250, 1000, 250, 500, 250, 500],
-                        requireInteraction: true,
-                        tag: 'sos-alert',
-                        renotify: true
-                    };
+                    if (window.renderPilotsMap && !document.getElementById('screen-pilots').classList.contains('hidden')) {
+                        window.renderPilotsMap(pilots);
+                    }
+                    
+                    if (window.manageSOSAudio) window.manageSOSAudio(anySOS); 
 
-                    if ('Notification' in window && Notification.permission === 'granted') {
-                        try {
-                            if ('serviceWorker' in navigator) {
-                                navigator.serviceWorker.ready.then(function(registration) {
-                                    registration.showNotification(notifTitle, notifOptions).catch(e => {
+                    // Ocultar banner si ya no hay SOS en curso
+                    if (!anySOS && window.wasSosActive) {
+                        window.dismissSosBanner();
+                    }
+
+                    // LÓGICA AGRESIVA DE NOTIFICACIONES Y ANUNCIO S.O.S
+                    if (anySOS && !window.wasSosActive && activeSosPilots.length > 0) {
+                        let sosPilot = activeSosPilots[0];
+                        let dist = window.calculateDistance ? window.calculateDistance(window.userLat, window.userLng, sosPilot.lat, sosPilot.lng) : null;
+                        let distStr = dist ? dist.toFixed(1) + ' km' : 'distancia desconocida';
+                        
+                        // 1. Mostrar el Banner Visual Interno (Media Pantalla)
+                        document.getElementById('sos-receive-text').innerHTML = `El piloto <strong>${sosPilot.name}</strong> solicita apoyo urgente a <strong>${distStr}</strong>.`;
+                        const sosBanner = document.getElementById('sos-receive-modal');
+                        sosBanner.classList.remove('hidden');
+                        requestAnimationFrame(() => {
+                            requestAnimationFrame(() => {
+                                sosBanner.classList.remove('-translate-y-full');
+                                sosBanner.classList.add('translate-y-0');
+                            });
+                        });
+
+                        // 2. Intentar despertar la pantalla manteniendo el WakeLock activo
+                        if (window.requestWakeLock) window.requestWakeLock();
+
+                        // 3. Notificación OS Push (Usando Tag y Renotify para forzar que vuelva a sonar en Android)
+                        const notifTitle = "🚨 ALERTA S.O.S 🚨";
+                        const notifOptions = {
+                            body: `URGENTE: ${sosPilot.name} solicita apoyo a ${distStr}.`,
+                            icon: "https://cdn-icons-png.flaticon.com/512/854/854878.png",
+                            badge: "https://cdn-icons-png.flaticon.com/512/854/854878.png",
+                            vibrate: [500, 250, 500, 250, 1000, 250, 500, 250, 500],
+                            requireInteraction: true,
+                            tag: 'sos-alert', // El TAG y RENOTIFY hacen que Android no agrupe en silencio
+                            renotify: true
+                        };
+
+                        if ('Notification' in window && Notification.permission === 'granted') {
+                            try {
+                                if ('serviceWorker' in navigator) {
+                                    navigator.serviceWorker.ready.then(function(registration) {
+                                        registration.showNotification(notifTitle, notifOptions).catch(e => {
+                                            new Notification(notifTitle, notifOptions);
+                                        });
+                                    }).catch(e => {
                                         new Notification(notifTitle, notifOptions);
                                     });
-                                }).catch(e => {
+                                } else {
                                     new Notification(notifTitle, notifOptions);
-                                });
-                            } else {
-                                new Notification(notifTitle, notifOptions);
+                                }
+                            } catch(e) {
+                                console.log("Notif error", e);
                             }
-                        } catch(e) { console.log("Notif error", e); }
+                        }
+                    }
+                    window.wasSosActive = anySOS;
+
+                }, (error) => {
+                    console.error("Error en radar:", error);
+                });
+            }
+
+            window.addEventListener("beforeunload", () => {
+                if(window.updatePilotLocation && window.userLat && window.userLng) {
+                    window.updatePilotLocation(window.userLat, window.userLng, 'inactivo');
+                }
+            });
+            
+            document.addEventListener("visibilitychange", () => {
+                if (document.visibilityState === 'visible') {
+                    if(window.requestWakeLock) window.requestWakeLock();
+                    // Si se abrió la app y hay SOS, asegurar que suena/vibra
+                    if(window.wasSosActive && window.manageSOSAudio) {
+                        window.manageSOSAudio(true);
                     }
                 }
-                window.wasSosActive = anySOS;
-
-            }, (error) => {
-                console.error("Error en radar:", error);
             });
-        }
 
-        window.addEventListener("beforeunload", () => {
-            if(window.updatePilotLocation && window.userLat && window.userLng) {
-                window.updatePilotLocation(window.userLat, window.userLng, 'inactivo');
-            }
-        });
-        
-        document.addEventListener("visibilitychange", () => {
-            if (document.visibilityState === 'visible') {
-                if(window.requestWakeLock) window.requestWakeLock();
-                if(window.wasSosActive && window.manageSOSAudio) {
-                    window.manageSOSAudio(true);
-                }
-            }
-        });
+        } else {
+            window.updatePilotLocation = async (lat, lng, status) => { /* Silencioso */ };
+            window.startPilotsListener = () => { /* Fallback */ };
+        }
     </script>
 
     <div id="app" class="w-full max-w-md bg-imade-bg h-full relative shadow-2xl overflow-hidden flex flex-col pt-safe">
@@ -509,22 +419,22 @@
             <!-- PANTALLA 1: INICIO -->
             <div id="screen-home" class="screen w-full h-full flex flex-col px-5 py-3 overflow-hidden">
                 
-                <div class="flex flex-col items-center justify-center mt-2 mb-4">
-                    <img src="logo.png" alt="Grupo Imade" class="h-[70px] object-contain mb-3 filter drop-shadow-md animate-floating" onerror="this.src='https://cdn-icons-png.flaticon.com/512/854/854878.png'">
-                    <h2 class="text-2xl font-black text-imade-dark text-center tracking-tight mt-1">¡Bienvenido!</h2>
+                <div class="flex flex-col items-center justify-center mt-1 mb-3">
+                    <img src="logo.png" alt="Grupo Imade" class="h-16 object-contain mb-3 filter drop-shadow-sm">
+                    <h2 class="text-2xl font-black text-imade-dark text-center tracking-tight">¡Bienvenido!</h2>
                 </div>
                 
                 <!-- Tarjetas de Acción Rápida -->
                 <div class="grid grid-cols-2 gap-3 mb-3">
-                    <div onclick="switchTab('search')" class="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform hover:shadow-md hover:border-blue-100">
-                        <div class="w-10 h-10 bg-blue-50 text-imade-light rounded-2xl flex items-center justify-center mb-2 transition-colors">
+                    <div onclick="switchTab('search')" class="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform hover:shadow-md">
+                        <div class="w-10 h-10 bg-blue-50 text-imade-light rounded-2xl flex items-center justify-center mb-2">
                             <i class="fa-solid fa-users text-lg"></i>
                         </div>
                         <h3 class="font-bold text-gray-800 text-sm">Buscar<br><span class="text-gray-500 font-medium text-[11px]">Cliente</span></h3>
                     </div>
                     
-                    <div onclick="switchTab('register')" class="bg-gradient-to-br from-imade-dark to-blue-900 p-4 rounded-3xl shadow-md flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform relative overflow-hidden group">
-                        <div class="absolute -right-4 -top-4 w-16 h-16 bg-white opacity-5 rounded-full blur-xl group-hover:opacity-20 transition-opacity"></div>
+                    <div onclick="switchTab('register')" class="bg-gradient-to-br from-imade-dark to-blue-900 p-4 rounded-3xl shadow-md flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 w-16 h-16 bg-white opacity-5 rounded-full blur-xl"></div>
                         <div class="w-10 h-10 bg-white/10 text-white rounded-2xl flex items-center justify-center mb-2 backdrop-blur-sm border border-white/10">
                             <i class="fa-solid fa-location-crosshairs text-lg"></i>
                         </div>
@@ -533,14 +443,14 @@
                 </div>
 
                 <!-- Estados Divididos: GPS y Piloto -->
-                <div class="grid grid-cols-2 gap-3 mb-5">
+                <div class="grid grid-cols-2 gap-3 mb-4">
                     <!-- Satelital -->
-                    <div class="bg-white rounded-3xl p-3 shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center gap-1.5 transition-colors relative overflow-hidden">
-                        <div id="home-gps-icon" class="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 transition-colors z-10">
+                    <div class="bg-white rounded-3xl p-3 shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center gap-1.5 transition-colors">
+                        <div id="home-gps-icon" class="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 transition-colors">
                             <i class="fa-solid fa-satellite-dish text-sm animate-pulse"></i>
                         </div>
-                        <div class="z-10">
-                            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Satelital <span id="home-speed" class="text-imade-light ml-1 font-black bg-blue-50 px-1 rounded">0 km/h</span></p>
+                        <div>
+                            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Satelital</p>
                             <p id="home-gps-status" class="text-[11px] font-bold text-gray-600 leading-tight">Buscando...</p>
                         </div>
                     </div>
@@ -557,12 +467,9 @@
                 </div>
 
                 <!-- BOTÓN S.O.S -->
-                <button onclick="openSosMenu()" class="w-full bg-gradient-to-r from-red-500 to-red-600 text-white font-black py-4 rounded-[1.5rem] shadow-[0_10px_25px_rgba(239,68,68,0.4)] hover:shadow-[0_10px_35px_rgba(239,68,68,0.5)] transition-all active:scale-95 flex justify-center items-center border border-red-400 overflow-hidden relative group">
+                <button onclick="triggerSOS()" class="w-full bg-red-500 text-white font-black py-3.5 rounded-3xl shadow-xl shadow-red-500/30 hover:bg-red-600 transition-all active:scale-95 flex justify-center items-center border border-red-400 overflow-hidden relative group">
                     <div class="absolute inset-0 bg-white/20 w-full h-full transform -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
-                    <div class="bg-white/20 p-2 rounded-xl mr-3 backdrop-blur-sm border border-white/30">
-                        <i class="fa-solid fa-triangle-exclamation text-xl animate-pulse"></i>
-                    </div>
-                    <span class="text-lg tracking-wide">EMITIR ALERTA S.O.S</span>
+                    <i class="fa-solid fa-triangle-exclamation mr-2 text-xl animate-pulse"></i> EMITIR ALERTA S.O.S
                 </button>
 
                 <!-- Footer IT -->
@@ -571,7 +478,7 @@
                         <i class="fa-solid fa-laptop-code text-imade-light"></i>
                         <span>Creado por <strong>Depto. de IT</strong></span>
                     </div>
-                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest" id="app-version-text">Versión 2.2.7</p>
+                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest" id="app-version-text">Versión 1.6</p>
                 </div>
             </div>
 
@@ -589,7 +496,7 @@
                     <div class="flex justify-between items-center mt-4 px-1">
                         <p class="text-xs text-gray-500 font-semibold" id="clients-count">Cargando...</p>
                         <div class="relative">
-                            <select id="sort-select" onchange="changeSort(this.value)" class="select-custom text-[11px] font-bold text-imade-dark bg-gray-50 border border-gray-200 rounded-xl pl-3 pr-7 py-2 outline-none cursor-pointer hover:bg-gray-100 transition-colors">
+                            <select id="sort-select" onchange="changeSort(this.value)" class="select-custom text-[11px] font-bold text-imade-dark bg-gray-50 border border-gray-200 rounded-xl pl-3 pr-7 py-2 outline-none cursor-pointer">
                                 <option value="distance">📍 Cercanos</option>
                                 <option value="name">🔤 A - Z</option>
                                 <option value="code">#️⃣ Código</option>
@@ -597,35 +504,38 @@
                         </div>
                     </div>
                 </div>
-                <div id="client-list" class="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar pb-6 overflow-x-hidden"></div>
+                <div id="client-list" class="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar pb-6"></div>
             </div>
 
             <!-- PANTALLA 3: MAPA DE RUTA (CON FICHA DESPLEGABLE) -->
             <div id="screen-map" class="screen hidden absolute inset-0 flex flex-col z-[100] bg-gray-200">
-                <div class="absolute top-safe left-4 right-4 mt-2 z-[400] flex justify-between items-center pointer-events-none">
+                <div class="absolute top-6 left-4 right-4 z-[400] flex justify-between items-center pointer-events-none">
                     <button onclick="closeMap()" class="bg-white/90 backdrop-blur-xl w-12 h-12 rounded-full shadow-lg text-imade-dark hover:bg-gray-50 flex items-center justify-center transition-transform active:scale-90 pointer-events-auto border border-white/50">
                         <i class="fa-solid fa-arrow-left text-lg"></i>
                     </button>
-                    <button onclick="centerMap()" class="bg-white/90 backdrop-blur-xl w-12 h-12 rounded-full shadow-lg text-imade-light hover:bg-gray-50 flex items-center justify-center transition-transform active:scale-90 pointer-events-auto border border-white/50 animate-pulse-fast">
+                    <button onclick="centerMap()" class="bg-white/90 backdrop-blur-xl w-12 h-12 rounded-full shadow-lg text-imade-light hover:bg-gray-50 flex items-center justify-center transition-transform active:scale-90 pointer-events-auto border border-white/50">
                         <i class="fa-solid fa-location-crosshairs text-lg"></i>
                     </button>
                 </div>
                 
                 <div class="flex-1 w-full relative">
+                    <!-- Mapa en el fondo -->
                     <div id="map" class="absolute inset-0"></div>
                     <div id="route-loader" class="absolute inset-0 bg-white/50 backdrop-blur-md z-[400] flex flex-col items-center justify-center hidden">
                         <div class="w-16 h-16 bg-white rounded-3xl shadow-2xl flex items-center justify-center mb-4 border border-blue-50"><div class="loader"></div></div>
-                        <p class="font-bold text-imade-dark bg-white/90 backdrop-blur-md px-5 py-2 rounded-full text-sm shadow-sm animate-pulse">Calculando ruta...</p>
+                        <p class="font-bold text-imade-dark bg-white/90 backdrop-blur-md px-5 py-2 rounded-full text-sm shadow-sm">Calculando ruta óptima...</p>
                     </div>
                 </div>
                 
                 <!-- BOTTOM SHEET DESPLEGABLE -->
                 <div id="bottom-sheet" class="glass-panel p-5 rounded-t-[32px] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] absolute bottom-0 left-0 w-full z-[500] transition-transform duration-300 ease-out translate-y-[calc(100%-160px)] flex flex-col h-[65dvh]">
                     
+                    <!-- Drag Handle Area -->
                     <div id="drag-handle" class="w-full h-10 absolute top-0 left-0 flex justify-center items-start pt-3 cursor-grab z-10" onclick="window.toggleSheet()">
                         <div class="w-12 h-1.5 bg-gray-400/50 rounded-full"></div>
                     </div>
                     
+                    <!-- Cabecera siempre visible -->
                     <div class="mt-5 mb-3 px-1 flex-shrink-0" onclick="window.toggleSheet()">
                         <div class="flex justify-between items-start mb-1">
                             <h3 id="map-client-name" class="text-xl font-black text-gray-900 leading-tight pr-4 tracking-tight">Nombre Cliente</h3>
@@ -633,11 +543,13 @@
                         </div>
                     </div>
                     
+                    <!-- Botones siempre visibles -->
                     <div class="grid grid-cols-2 gap-3 mb-4 px-1 flex-shrink-0">
-                        <button onclick="openWaze()" class="bg-[#33ccff] text-white font-bold py-3 px-4 rounded-xl shadow-[0_4px_15px_rgba(51,204,255,0.4)] hover:bg-[#00bfff] flex justify-center items-center transition-transform active:scale-95"><i class="fa-brands fa-waze text-xl mr-2"></i> Waze</button>
+                        <button onclick="openWaze()" class="bg-[#33ccff] text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-[#33ccff]/40 hover:bg-[#00bfff] flex justify-center items-center transition-transform active:scale-95"><i class="fa-brands fa-waze text-xl mr-2"></i> Waze</button>
                         <button onclick="openGoogleMaps()" class="bg-gray-100 text-gray-800 font-bold py-3 px-4 rounded-xl shadow-sm hover:bg-gray-200 flex justify-center items-center transition-transform active:scale-95 border border-gray-200"><i class="fa-solid fa-map-location-dot text-lg mr-2 text-[#34a853]"></i> Maps</button>
                     </div>
 
+                    <!-- Detalles (Visibles al desplegar) -->
                     <div id="sheet-details" class="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-gray-200/60 flex-1 overflow-y-auto opacity-0 transition-opacity duration-300 no-scrollbar">
                         <div class="space-y-3 w-full">
                             <div class="flex items-center">
@@ -698,17 +610,17 @@
                             <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Dirección Exacta</label><textarea id="reg-address" required rows="2" placeholder="Ej. 4ta Calle 2-33 Zona 1..." class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm resize-none font-bold text-gray-800"></textarea></div>
                             <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">País</label><input type="text" id="reg-pais" value="Guatemala" required class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800 shadow-inner"></div>
                         </div>
-                        <div class="pt-2"><button type="submit" id="btn-save" class="w-full bg-imade-dark text-white font-black py-4 rounded-2xl shadow-[0_10px_20px_rgba(34,56,122,0.3)] hover:bg-blue-900 transition-all active:scale-95 disabled:opacity-50 flex justify-center items-center"><i class="fa-solid fa-cloud-arrow-up mr-2 text-lg"></i> Guardar Cliente</button></div>
+                        <div class="pt-2"><button type="submit" id="btn-save" class="w-full bg-imade-dark text-white font-black py-4 rounded-2xl shadow-xl shadow-imade-dark/30 hover:bg-blue-900 transition-all active:scale-95 disabled:opacity-50 flex justify-center items-center"><i class="fa-solid fa-cloud-arrow-up mr-2 text-lg"></i> Guardar Cliente</button></div>
                     </form>
                 </div>
             </div>
 
-            <!-- PANTALLA 5: MAPA DE PILOTOS EN VIVO (CON TRAYECTORIAS Y VELOCIDAD) -->
+            <!-- PANTALLA 5: MAPA DE PILOTOS EN VIVO -->
             <div id="screen-pilots" class="screen hidden absolute inset-0 flex flex-col z-[90] bg-gray-200">
                 <div class="p-5 bg-white/95 backdrop-blur-md shadow-sm shrink-0 z-10 relative border-b border-gray-100 flex justify-between items-center">
                     <div>
                         <h2 class="text-2xl font-black text-imade-dark tracking-tight">Flota en Vivo</h2>
-                        <p class="text-xs text-gray-500 font-medium">Trayectorias y velocidad en tiempo real</p>
+                        <p class="text-xs text-gray-500 font-medium">Monitoreo satelital simultáneo</p>
                     </div>
                     <div class="w-10 h-10 bg-blue-50 text-imade-light rounded-full flex items-center justify-center shadow-inner relative">
                         <div class="absolute inset-0 border-2 border-imade-light rounded-full animate-ping opacity-50"></div>
@@ -717,7 +629,7 @@
                 </div>
                 <div class="flex-1 w-full relative">
                     <div id="map-pilots" class="absolute inset-0 bg-gray-100"></div>
-                    <button onclick="window.centerPilotsMap()" class="absolute bottom-safe right-4 mb-4 z-[400] bg-white/90 backdrop-blur-xl w-14 h-14 rounded-full shadow-lg text-imade-dark hover:bg-gray-50 flex items-center justify-center transition-transform active:scale-90 border border-white/50 animate-pulse-fast">
+                    <button onclick="window.centerPilotsMap()" class="absolute bottom-6 right-4 z-[400] bg-white/90 backdrop-blur-xl w-14 h-14 rounded-full shadow-lg text-imade-dark hover:bg-gray-50 flex items-center justify-center transition-transform active:scale-90 border border-white/50">
                         <i class="fa-solid fa-location-crosshairs text-xl"></i>
                     </button>
                 </div>
@@ -826,6 +738,7 @@
                     }
                     deferredPrompt = null;
                 } else {
+                    // Si el navegador bloqueó el prompt nativo
                     btnInstall.classList.add('hidden');
                     installInstructions.classList.remove('hidden');
                     
@@ -856,9 +769,30 @@
             });
         }
 
-        // =========================================================
-        // MAPA Y LÓGICA CORE
-        // =========================================================
+        // SW FIX: Usamos un Service Worker robusto con la inyección por BLOB mejorada
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                try {
+                    const swCode = `
+                        self.addEventListener('install', (e) => { self.skipWaiting(); });
+                        self.addEventListener('activate', (e) => { 
+                            e.waitUntil(caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))));
+                            self.clients.claim(); 
+                        });
+                        self.addEventListener('fetch', (e) => {
+                            if (!e.request.url.startsWith('http')) return;
+                            e.respondWith(fetch(e.request, {cache: "no-store"}).catch(() => caches.match(e.request)));
+                        });
+                    `;
+                    const blob = new Blob([swCode], {type: 'application/javascript'});
+                    const url = URL.createObjectURL(blob);
+                    navigator.serviceWorker.register(url).then(reg => {
+                        console.log("Service Worker Activo y Listo para Notificaciones");
+                    }).catch(err => console.log('SW error', err));
+                } catch(e) { console.warn("SW Setup Error:", e); }
+            });
+        }
+
         const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzbyjPISFC8bYmv1McsPFUjGqual-O2E-p29DyOr2T2L02jsT5fKpAUR_n_dEtO4DXH/exec";
         
         let clients = [];
@@ -867,8 +801,6 @@
         
         window.userLat = null;
         window.userLng = null;
-        window.userSpeed = 0;
-        window.myPath = [];
         
         let selectedClient = null;
         let currentSortMethod = 'distance'; 
@@ -876,38 +808,288 @@
         
         let pilotsMap = null;
         let pilotMarkers = {};
-        let pilotPolylines = {};
 
-        // Función para generar un color único basado en un texto (ID del piloto)
-        function getColorForId(idStr) {
-            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#0ea5e9'];
-            let hash = 0;
-            for(let i = 0; i < idStr.length; i++) hash += idStr.charCodeAt(i);
-            return colors[hash % colors.length];
+        // === LÓGICA DE PERMISOS OBLIGATORIOS CORREGIDA ===
+        window.requestAllPermissions = function() {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        document.getElementById('permissions-modal').classList.add('hidden');
+                        showToast("¡Listo!", "Notificaciones de S.O.S activadas.", "fa-check");
+                        
+                        // Envia notif silenciosa para instanciar en Android OS
+                        if ('serviceWorker' in navigator) {
+                            try {
+                                navigator.serviceWorker.getRegistrations().then(regs => {
+                                    if(regs && regs.length > 0) regs[0].showNotification("RutasApp", {body:"Permisos listos", icon: "https://cdn-icons-png.flaticon.com/512/854/854878.png"}).catch(e => console.warn(e));
+                                }).catch(e => console.warn("SW getRegistrations error:", e));
+                            } catch(e) {}
+                        }
+                    } else {
+                        alert("⚠️ ACCIÓN REQUERIDA: Has denegado las notificaciones. Para tu seguridad y la de la flota, ve a la configuración de tu navegador o celular y ACTIVA las notificaciones para esta app.");
+                        document.getElementById('permissions-modal').classList.add('hidden');
+                    }
+                });
+            } else {
+                alert("Tu dispositivo no soporta notificaciones nativas (Asegurate de estar en la app instalada y no en Safari).");
+                document.getElementById('permissions-modal').classList.add('hidden');
+            }
+            requestLocation();
+        };
+
+        function checkPermissions() {
+            if ('Notification' in window && Notification.permission !== 'granted') {
+                document.getElementById('permissions-modal').classList.remove('hidden');
+            }
         }
 
-        window.requestLocation = function() {
+        let wakeLock = null;
+        window.requestWakeLock = async function() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch (err) {}
+        }
+
+        // =========================================================================
+        // NUEVA LÓGICA DE ALARMA: VIBRACIÓN CONTINUA Y SONIDO
+        // =========================================================================
+        let sosInterval;
+        let isSosPlaying = false;
+        let audioCtx = null;
+        window.manageSOSAudio = function(anySOS) {
+            if (anySOS && !isSosPlaying) {
+                isSosPlaying = true;
+                if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if(audioCtx.state === 'suspended') audioCtx.resume();
+                
+                sosInterval = setInterval(() => {
+                    try {
+                        // Sonido Web Audio API (Sobrevive más en background en iOS)
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                        osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.2);
+                        gain.gain.setValueAtTime(0.15, audioCtx.currentTime); 
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start();
+                        osc.stop(audioCtx.currentTime + 0.4);
+
+                        // VIBRACIÓN CONTINUA DE HARDWARE (Android)
+                        if (navigator.vibrate) {
+                            navigator.vibrate([400, 200]);
+                        }
+                    } catch(e) {}
+                }, 600); // Se repite cada 600ms
+            } else if (!anySOS && isSosPlaying) {
+                isSosPlaying = false;
+                clearInterval(sosInterval);
+                if (navigator.vibrate) navigator.vibrate(0); // Apagar vibración
+            }
+        };
+
+        const mockData = [
+            { codigo: '169', nombre: 'Jersson Ariel Ramirez', telefono: '', direccion: 'Gualán', municipio: 'Gualán', departamento: 'Zacapa', lat: 15.115577, lng: -89.354512 },
+            { codigo: '642', nombre: 'Victoriano Sulugui', telefono: '', direccion: 'Totonicapán', municipio: 'Totonicapán', departamento: 'Totonicapán', lat: 14.826953, lng: -91.218808 },
+            { codigo: '1987', nombre: 'Corporación Cifuentes', telefono: '', direccion: 'San Francisco La Unión', municipio: 'San Francisco La Unión', departamento: 'Quetzaltenango', lat: 14.910562, lng: -91.367340 },
+            { codigo: '1076', nombre: 'Grupo Construferro', telefono: '', direccion: 'San Mateo', municipio: 'San Mateo', departamento: 'Quetzaltenango', lat: 14.864376, lng: -91.567317 }
+        ];
+
+        window.onload = () => {
+            loadClients();
+            requestLocation();
+            setTimeout(syncData, 1000); 
+            setupSearchInput();
+            checkPilotIdentity();
+            
+            setTimeout(() => {
+                const handle = document.getElementById('drag-handle');
+                let startY = 0;
+                if(handle) {
+                    handle.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, {passive: true});
+                    handle.addEventListener('touchend', e => {
+                        let endY = e.changedTouches[0].clientY;
+                        if (startY - endY > 30 && !window.sheetExpanded) {
+                            window.toggleSheet(); 
+                        } else if (endY - startY > 30 && window.sheetExpanded) {
+                            window.toggleSheet(); 
+                        }
+                    }, {passive: true});
+                }
+            }, 1000);
+        };
+
+        function checkPilotIdentity() {
+            if(!localStorage.getItem('imade_pilot_name')) {
+                document.getElementById('name-modal').classList.remove('hidden');
+            } else {
+                window.requestWakeLock();
+                if (isStandalone) checkPermissions(); 
+            }
+        }
+
+        function savePilotName() {
+            const name = document.getElementById('pilot-name-input').value.trim();
+            if(name.length > 2) {
+                localStorage.setItem('imade_pilot_name', name);
+                document.getElementById('name-modal').classList.add('hidden');
+                showToast("¡Turno iniciado!", "Bienvenido " + name, "fa-user-check");
+                
+                checkPermissions();
+                window.requestWakeLock();
+                
+                // Desbloquea el audio en iOS al interactuar con el botón
+                if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if(audioCtx.state === 'suspended') audioCtx.resume();
+
+                if (window.updatePilotLocation && window.userLat && window.userLng) {
+                    window.updatePilotLocation(window.userLat, window.userLng, 'activo');
+                }
+            } else {
+                alert("Por favor ingresa un nombre válido.");
+            }
+        }
+
+        function switchTab(tabId) {
+            ['home', 'search', 'register', 'map', 'pilots'].forEach(id => {
+                document.getElementById(`screen-${id}`).classList.add('hidden');
+                document.getElementById(`screen-${id}`).classList.remove('screen-fade');
+            });
+            
+            const selectedScreen = document.getElementById(`screen-${tabId}`);
+            selectedScreen.classList.remove('hidden');
+            void selectedScreen.offsetWidth; 
+            selectedScreen.classList.add('screen-fade');
+            
+            document.getElementById('bottom-nav').classList.remove('hidden');
+
+            const btns = document.querySelectorAll('.nav-btn');
+            btns.forEach(btn => {
+                btn.classList.remove('text-imade-dark');
+                btn.classList.add('text-gray-400');
+            });
+
+            const activeBtn = Array.from(btns).find(btn => btn.getAttribute('onclick').includes(tabId));
+            if(activeBtn) {
+                activeBtn.classList.remove('text-gray-400');
+                activeBtn.classList.add('text-imade-dark');
+            }
+
+            if (tabId === 'search') filterClients(); 
+            
+            if (tabId === 'register') {
+                document.getElementById('reg-pilot').value = localStorage.getItem('imade_pilot_name') || 'Anónimo';
+            }
+            
+            if (tabId === 'pilots') {
+                setTimeout(() => {
+                    if (pilotsMap) pilotsMap.invalidateSize(); 
+                    if (window.renderPilotsMap) window.renderPilotsMap(window.latestPilots || []);
+                    if (pilotsMap && window.userLat && window.userLng) {
+                        pilotsMap.setView([window.userLat, window.userLng], 14);
+                    }
+                }, 300);
+            }
+        }
+
+        window.sheetExpanded = false;
+        window.toggleSheet = function() {
+            const sheet = document.getElementById('bottom-sheet');
+            const details = document.getElementById('sheet-details');
+            window.sheetExpanded = !window.sheetExpanded;
+            
+            if (window.sheetExpanded) {
+                sheet.classList.remove('translate-y-[calc(100%-160px)]');
+                sheet.classList.add('translate-y-0');
+                details.classList.remove('opacity-0');
+                details.classList.add('opacity-100');
+            } else {
+                sheet.classList.add('translate-y-[calc(100%-160px)]');
+                sheet.classList.remove('translate-y-0');
+                details.classList.remove('opacity-100');
+                details.classList.add('opacity-0');
+                details.scrollTop = 0; 
+            }
+        };
+
+        window.centerPilotsMap = function() {
+            if (pilotsMap && window.userLat && window.userLng) {
+                pilotsMap.flyTo([window.userLat, window.userLng], 14, { animate: true, duration: 1 });
+            } else {
+                showToast("Buscando...", "Aún no tenemos tu ubicación GPS.", "fa-location-crosshairs");
+            }
+        }
+
+        window.calculateDistance = function(lat1, lon1, lat2, lon2) {
+            if(!lat1 || !lon1 || !lat2 || !lon2) return null;
+            const R = 6371; 
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        let mySosInterval;
+        function triggerSOS() {
+            if (!window.userLat || !window.userLng) { showToast("Error", "GPS no disponible para S.O.S"); return; }
+            
+            if (window.updatePilotLocation) window.updatePilotLocation(window.userLat, window.userLng, 'SOS');
+            
+            document.getElementById('sos-active-modal').classList.remove('hidden');
+            let timeLeft = 30;
+            document.getElementById('sos-timer').innerText = timeLeft;
+            
+            clearInterval(mySosInterval);
+            mySosInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('sos-timer').innerText = timeLeft;
+                if(timeLeft <= 0) {
+                    cancelSOS();
+                }
+            }, 1000);
+        }
+
+        function cancelSOS() {
+            clearInterval(mySosInterval);
+            document.getElementById('sos-active-modal').classList.add('hidden');
+            if (window.updatePilotLocation && window.userLat && window.userLng) {
+                window.updatePilotLocation(window.userLat, window.userLng, 'activo');
+            }
+            showToast("S.O.S Finalizado", "Tu estado volvió a activo", "fa-check-circle");
+        }
+
+        function closeMap() {
+            document.getElementById('screen-map').classList.add('hidden');
+            document.getElementById('screen-search').classList.remove('hidden');
+            document.getElementById('bottom-nav').classList.remove('hidden');
+            if(window.sheetExpanded) window.toggleSheet();
+        }
+
+        function openGpsModal() {
+            if(!gpsAlertShown) {
+                document.getElementById('gps-modal').classList.remove('hidden');
+                gpsAlertShown = true;
+            }
+        }
+        function closeGpsModal() { document.getElementById('gps-modal').classList.add('hidden'); }
+
+        function requestLocation() {
             if ("geolocation" in navigator) {
                 navigator.geolocation.watchPosition(
                     (position) => {
                         window.userLat = position.coords.latitude;
                         window.userLng = position.coords.longitude;
                         
-                        // Calcular y guardar velocidad
-                        let speedMps = position.coords.speed || 0;
-                        window.userSpeed = Math.round(speedMps * 3.6); // M/s to Km/h
-                        document.getElementById('home-speed').innerText = `${window.userSpeed} km/h`;
-
-                        // Guardar trayectoria (Path)
-                        window.myPath.push([window.userLat, window.userLng]);
-                        if(window.myPath.length > 20) window.myPath.shift(); // Mantener solo últimos 20 puntos
-                        
                         const homeStatus = document.getElementById('home-gps-status');
                         const homeIcon = document.getElementById('home-gps-icon');
                         if (homeStatus && homeIcon) {
                             homeStatus.innerHTML = `<span class="text-green-600">Activo</span>`;
                             homeStatus.className = `text-[11px] font-bold text-gray-800`;
-                            homeIcon.className = `w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors bg-green-50 text-green-500 z-10`;
+                            homeIcon.className = `w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors bg-green-50 text-green-500`;
                             homeIcon.innerHTML = `<i class="fa-solid fa-satellite-dish text-sm"></i>`;
                         }
 
@@ -918,9 +1100,8 @@
                             pilotIcon.className = `w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors bg-green-50 text-green-500`;
                         }
 
-                        // Actualiza Firebase SOLAMENTE si no estás en medio de un SOS (ya que el SOS tiene su propia actualización)
-                        if(window.updatePilotLocation && document.getElementById('sos-active-modal').classList.contains('hidden') && document.getElementById('sos-countdown-modal').classList.contains('hidden')){
-                            window.updatePilotLocation(window.userLat, window.userLng, 'activo', '', '');
+                        if(window.updatePilotLocation && document.getElementById('sos-active-modal').classList.contains('hidden')){
+                            window.updatePilotLocation(window.userLat, window.userLng, 'activo');
                         }
 
                         if (window.renderPilotsMap && !document.getElementById('screen-pilots').classList.contains('hidden')) {
@@ -941,7 +1122,7 @@
                         const homeIcon = document.getElementById('home-gps-icon');
                         if (homeStatus && homeIcon) {
                             homeStatus.innerHTML = `<span class="text-red-500">Apagado</span>`;
-                            homeIcon.className = "w-8 h-8 rounded-xl bg-red-50 text-red-500 flex items-center justify-center shrink-0 z-10";
+                            homeIcon.className = "w-8 h-8 rounded-xl bg-red-50 text-red-500 flex items-center justify-center shrink-0";
                             homeIcon.innerHTML = `<i class="fa-solid fa-location-crosshairs text-sm"></i>`;
                         }
                         
@@ -955,14 +1136,11 @@
                         if(window.updatePilotLocation) window.updatePilotLocation(0, 0, 'inactivo');
                         openGpsModal();
                     },
-                    { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 } // Ajustado para ser más rápido en reportar
+                    { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
                 );
             }
-        };
+        }
 
-        // =========================================================================
-        // MAPA DE FLOTA MEJORADO (TRAYECTORIAS, VELOCIDAD, CAMIONES MULTICOLOR Y BURBUJA RESPONSIVE)
-        // =========================================================================
         window.renderPilotsMap = function(pilots = []) {
             let startLat = window.userLat || 14.6349;
             let startLng = window.userLng || -90.5069;
@@ -984,22 +1162,15 @@
                     name: (localStorage.getItem('imade_pilot_name') || "Piloto") + " (Tú)",
                     lat: window.userLat,
                     lng: window.userLng,
-                    speed: window.userSpeed || 0,
-                    path: window.myPath || [],
                     status: isMySos ? 'SOS' : 'activo'
                 });
             }
             
-            // Cleanup
             const currentIds = displayPilots.map(p => p.id);
             for (const id in pilotMarkers) {
                 if (!currentIds.includes(id)) {
                     pilotsMap.removeLayer(pilotMarkers[id]);
                     delete pilotMarkers[id];
-                    if (pilotPolylines[id]) {
-                        pilotsMap.removeLayer(pilotPolylines[id]);
-                        delete pilotPolylines[id];
-                    }
                 }
             }
 
@@ -1007,51 +1178,20 @@
                 if (pilot.status === 'inactivo' || pilot.lat === 0) return; 
 
                 const isSOS = pilot.status === 'SOS';
-                // Asigna color por ID o Corporativo si es el usuario propio
-                let baseColor = isSOS ? '#ef4444' : getColorForId(pilot.id);
-                if (pilot.id === myId && !isSOS) baseColor = '#22387a'; 
-
+                const color = isSOS ? '#ef4444' : '#36a8e1';
                 const pulseClass = isSOS ? 'sos-danger-blink' : '';
-                const iconCls = 'fa-truck'; // Icono de camión!
-                const speed = pilot.speed || 0;
+                const iconCls = isSOS ? 'fa-triangle-exclamation' : 'fa-truck-fast';
 
-                // Dibujar Trayectoria Animada
-                if (pilot.path && pilot.path.length > 1) {
-                    if (pilotPolylines[pilot.id]) {
-                        pilotPolylines[pilot.id].setLatLngs(pilot.path);
-                    } else {
-                        pilotPolylines[pilot.id] = L.polyline(pilot.path, {
-                            color: baseColor,
-                            weight: 4,
-                            opacity: 0.6,
-                            dashArray: '10, 10',
-                            className: 'animated-route'
-                        }).addTo(pilotsMap);
-                    }
-                }
-
-                // ==========================================
-                // BURBUJA BLANCA MEJORADA RESPONSIVE Y CENTRADA
-                // ==========================================
                 const iconHtml = `
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end; width: 100%; height: 100%;">
-                        
-                        <!-- Burbuja Blanca de Nombre (Responsive) -->
-                        <div style="background: rgba(255,255,255,0.95); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 10px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid #e2e8f0; color: #1e293b; max-width: 140px; display: flex; flex-direction: column; align-items: center; line-height: 1.1; margin-bottom: 6px; z-index:999;">
-                            <span style="font-size: 11px; font-weight: 800; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">${pilot.name} ${isSOS ? '<span style="color:red; animation: ping 1s infinite;">🚨</span>' : ''}</span>
-                            <span style="color: #64748b; font-size: 9px; font-weight: 700; margin-top: 2px;">${speed} km/h</span>
-                        </div>
-                        
-                        <!-- Círculo del Camión -->
-                        <div class="${pulseClass}" style='background-color:${baseColor}; width:34px; height:34px; border-radius:50%; border:2px solid white; box-shadow:0 4px 10px rgba(0,0,0,0.3); display:flex; justify-content:center; align-items:center; z-index: 1000; flex-shrink: 0;'>
-                            <i class='fa-solid ${iconCls}' style='color:white; font-size:13px;'></i>
-                        </div>
-
+                    <div class="${pulseClass}" style='background-color:${color}; width:30px; height:30px; border-radius:50%; border:3px solid white; box-shadow:0 4px 10px rgba(0,0,0,0.4); display:flex; justify-content:center; align-items:center; transition: all 0.3s;'>
+                        <i class='fa-solid ${iconCls}' style='color:white; font-size:12px;'></i>
+                    </div>
+                    <div style="background: white; font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 10px; margin-top: 5px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.15); white-space: nowrap; transform: translateX(-25%); border: 1px solid #f1f5f9; color: #1e293b; position:relative; z-index:999;">
+                        ${pilot.name} ${isSOS ? '<span style="color:red; animation: ping 1s infinite;">🚨</span>' : ''}
                     </div>
                 `;
 
-                // iconSize amplio para que la burbuja se expanda hacia los lados, anclado en la base central (donde está el camión)
-                const icon = L.divIcon({ className: 'custom-div-icon', html: iconHtml, iconSize: [160, 80], iconAnchor: [80, 75] });
+                const icon = L.divIcon({ className: 'custom-div-icon', html: iconHtml, iconSize: [30, 30], iconAnchor: [15, 15] });
 
                 if (pilotMarkers[pilot.id]) {
                     pilotMarkers[pilot.id].setLatLng([pilot.lat, pilot.lng]);
@@ -1103,7 +1243,7 @@
                 container.innerHTML = `<div class="flex flex-col items-center justify-center py-16 text-gray-400"><i class="fa-solid fa-folder-open text-5xl mb-4 opacity-40"></i><p class="font-bold text-gray-500">Ningún cliente encontrado</p></div>`;
                 return;
             }
-            list.forEach((client, index) => {
+            list.forEach(client => {
                 const initial = client.nombre ? client.nombre.charAt(0).toUpperCase() : 'C';
                 let distBadge = '';
                 if (client.distancia !== null && client.distancia !== undefined) {
@@ -1117,8 +1257,7 @@
                 if (!subtext) subtext = "Sin dirección";
 
                 const card = document.createElement('div');
-                card.className = "bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4 active:scale-95 transition-transform cursor-pointer hover:border-blue-200 animate-slideIn opacity-0";
-                card.style.animationDelay = `${index * 0.04}s`; // Animación en cascada rápida
+                card.className = "bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4 active:scale-95 transition-transform cursor-pointer hover:border-blue-200";
                 card.onclick = () => selectClientForRoute(client);
                 card.innerHTML = `<div class="w-12 h-12 rounded-2xl bg-gray-50 text-imade-dark flex items-center justify-center font-black text-lg shrink-0 border border-gray-200">${initial}</div><div class="flex-1 min-w-0"><div class="flex justify-between items-start mb-0.5"><h3 class="font-bold text-gray-900 text-[13px] truncate leading-tight">${client.nombre || 'Sin Nombre'}</h3>${distBadge}</div><p class="text-[11px] text-gray-500 truncate mt-1 font-medium"><span class="font-bold text-gray-800 bg-gray-100 px-1.5 py-0.5 rounded mr-1"># ${client.codigo || 'S/N'}</span> ${subtext}</p></div>`;
                 container.appendChild(card);
@@ -1223,7 +1362,7 @@
             if (routingControl) map.removeControl(routingControl);
             const userIcon = L.divIcon({ className: 'custom-div-icon', html: "<div style='background-color:#36a8e1; width:20px; height:20px; border-radius:50%; border:3px solid white; box-shadow:0 3px 8px rgba(0,0,0,0.3);'></div>", iconSize: [20, 20], iconAnchor: [10, 10] });
             const clientIcon = L.divIcon({ className: 'custom-div-icon', html: "<div style='background-color:#22387a; width:34px; height:34px; border-radius:50%; border:3px solid white; box-shadow:0 4px 10px rgba(0,0,0,0.4); display:flex; justify-content:center; align-items:center;'><i class='fa-solid fa-store' style='color:white; font-size:14px;'></i></div>", iconSize: [34, 34], iconAnchor: [17, 17] });
-            routingControl = L.Routing.control({ waypoints: [ L.latLng(startLat, startLng), L.latLng(selectedClient.lat, selectedClient.lng) ], router: L.Routing.osrmv1({ language: 'es', profile: 'driving' }), lineOptions: { styles: [{color: '#36a8e1', opacity: 0.9, weight: 6, className: 'animated-route'}] }, createMarker: function(i, waypoint, n) { return L.marker(waypoint.latLng, { icon: (i === 0) ? userIcon : clientIcon }); }, addWaypoints: false, draggableWaypoints: false, fitSelectedRoutes: true, showAlternatives: false }).addTo(map);
+            routingControl = L.Routing.control({ waypoints: [ L.latLng(startLat, startLng), L.latLng(selectedClient.lat, selectedClient.lng) ], router: L.Routing.osrmv1({ language: 'es', profile: 'driving' }), lineOptions: { styles: [{color: '#36a8e1', opacity: 0.9, weight: 6}] }, createMarker: function(i, waypoint, n) { return L.marker(waypoint.latLng, { icon: (i === 0) ? userIcon : clientIcon }); }, addWaypoints: false, draggableWaypoints: false, fitSelectedRoutes: true, showAlternatives: false }).addTo(map);
             routingControl.on('routesfound', function(e) { document.getElementById('route-loader').classList.add('hidden'); });
             routingControl.on('routingerror', function(e) { document.getElementById('route-loader').classList.add('hidden'); showToast("Error", "No se pudo trazar ruta."); });
         }
