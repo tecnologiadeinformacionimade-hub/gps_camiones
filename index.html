@@ -12,7 +12,7 @@
     <title>Gestión de Clientes - Grupo Imade</title>
     
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#22387a">
+    <meta name="theme-color" content="#111111">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RutasApp">
@@ -36,11 +36,15 @@
                     keyframes: {
                         floating: {
                             '0%, 100%': { transform: 'translateY(0)' },
-                            '50%': { transform: 'translateY(-8px)' },
+                            '50%': { transform: 'translateY(-6px)' },
                         },
                         slideInRight: {
                             '0%': { opacity: '0', transform: 'translateX(20px)' },
                             '100%': { opacity: '1', transform: 'translateX(0)' },
+                        },
+                        popIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.95)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' },
                         }
                     },
                     animation: {
@@ -48,6 +52,7 @@
                         'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                         'floating': 'floating 3s ease-in-out infinite',
                         'slideIn': 'slideInRight 0.4s ease-out forwards',
+                        'popIn': 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
                     }
                 }
             }
@@ -104,26 +109,22 @@
             background-size: 1em;
         }
 
+        /* Safe Areas para iOS Notches/Islands */
         .pb-safe { padding-bottom: env(safe-area-inset-bottom, 16px); }
-        .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+        .pt-safe { padding-top: max(env(safe-area-inset-top, 24px), 24px); }
         
         /* Animación agresiva para SOS */
         @keyframes sosBlink { 0%, 100% { background-color: #ef4444; transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 50% { background-color: #dc2626; transform: scale(1.15); box-shadow: 0 0 20px 10px rgba(239, 68, 68, 0); } }
         .sos-danger-blink { animation: sosBlink 0.8s cubic-bezier(0.4, 0, 0.6, 1) infinite; border: 3px solid white !important; }
 
-        /* Path Animation for Map Trails */
+        /* Animación fluida de rutas */
         .leaflet-interactive { transition: stroke-dashoffset 1s linear; }
-        
-        @keyframes dashLine {
-            to { stroke-dashoffset: -40; }
-        }
-        .animated-route {
-            animation: dashLine 2s linear infinite;
-        }
+        @keyframes dashLine { to { stroke-dashoffset: -40; } }
+        .animated-route { animation: dashLine 2s linear infinite; }
     </style>
 
     <script>
-        const APP_VERSION = "2.1"; 
+        const APP_VERSION = "3.0"; 
         const currentVersion = localStorage.getItem('imade_app_version');
         
         if (currentVersion !== APP_VERSION) {
@@ -150,7 +151,6 @@
 
     <!-- PANTALLA DE INSTALACIÓN OBLIGATORIA (PWA) -->
     <div id="install-screen" class="fixed inset-0 z-[99999] bg-white flex flex-col items-center justify-center p-6 text-center hidden">
-        <!-- SE APLICÓ EL LOGO app.jpg EXTERNO AQUÍ -->
         <img src="app.jpg" alt="RutasApp" class="w-36 h-36 rounded-[2.5rem] shadow-2xl mb-6 object-cover bg-blue-50 border-4 border-gray-50/50" onerror="this.src='https://cdn-icons-png.flaticon.com/512/854/854878.png'">
         <h2 class="text-3xl font-black text-imade-dark mb-3 tracking-tight">Instala RutasApp</h2>
         <p class="text-gray-500 mb-8 font-medium px-4 leading-relaxed text-sm">Para continuar y garantizar que el GPS funcione en tiempo real, instala la aplicación dando clic en el botón de abajo.</p>
@@ -199,84 +199,98 @@
         </div>
     </div>
 
-    <!-- 1. SELECCIÓN DE MOTIVO S.O.S (Opciones Centradas y Mejoradas) -->
-    <div id="sos-reason-modal" class="fixed inset-0 bg-black/90 z-[99990] hidden flex-col items-center justify-center backdrop-blur-xl px-4 text-center transition-all">
-        <h2 class="text-3xl font-black text-white mb-2 tracking-tight drop-shadow-md mt-4">¿Cuál es la emergencia?</h2>
-        <p class="text-gray-300 text-sm font-medium mb-8">Selecciona un motivo para alertar a la flota.</p>
-        
-        <div class="w-full max-w-sm flex flex-col gap-4 px-2 mx-auto">
-            <button onclick="startSosCountdown('💥 Choque o Accidente')" class="bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 text-white font-bold py-3.5 px-5 rounded-2xl flex items-center justify-start gap-5 transition-all active:scale-95 backdrop-blur-md shadow-lg w-full">
-                <div class="w-14 h-14 bg-red-500/20 rounded-xl border border-red-500/30 flex items-center justify-center text-3xl shrink-0">💥</div> 
-                <span class="text-lg text-left leading-tight">Choque o<br>Accidente</span>
-            </button>
-            <button onclick="startSosCountdown('⚠️ Asalto o Robo')" class="bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 text-white font-bold py-3.5 px-5 rounded-2xl flex items-center justify-start gap-5 transition-all active:scale-95 backdrop-blur-md shadow-lg w-full">
-                <div class="w-14 h-14 bg-orange-500/20 rounded-xl border border-orange-500/30 flex items-center justify-center text-3xl shrink-0">⚠️</div> 
-                <span class="text-lg text-left leading-tight">Asalto o<br>Robo en Ruta</span>
-            </button>
-            <button onclick="startSosCountdown('🚑 Emergencia Médica')" class="bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 text-white font-bold py-3.5 px-5 rounded-2xl flex items-center justify-start gap-5 transition-all active:scale-95 backdrop-blur-md shadow-lg w-full">
-                <div class="w-14 h-14 bg-blue-500/20 rounded-xl border border-blue-500/30 flex items-center justify-center text-3xl shrink-0">🚑</div> 
-                <span class="text-lg text-left leading-tight">Emergencia<br>Médica</span>
-            </button>
-            <button onclick="startSosCountdown('🛠️ Falla Mecánica')" class="bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 text-white font-bold py-3.5 px-5 rounded-2xl flex items-center justify-start gap-5 transition-all active:scale-95 backdrop-blur-md shadow-lg w-full">
-                <div class="w-14 h-14 bg-gray-500/20 rounded-xl border border-gray-500/30 flex items-center justify-center text-3xl shrink-0">🛠️</div> 
-                <span class="text-lg text-left leading-tight">Falla<br>Mecánica</span>
-            </button>
-            <button onclick="startSosCountdown('⛽ Sin Combustible')" class="bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 text-white font-bold py-3.5 px-5 rounded-2xl flex items-center justify-start gap-5 transition-all active:scale-95 backdrop-blur-md shadow-lg w-full">
-                <div class="w-14 h-14 bg-yellow-500/20 rounded-xl border border-yellow-500/30 flex items-center justify-center text-3xl shrink-0">⛽</div> 
-                <span class="text-lg text-left leading-tight">Me quedé sin<br>Combustible</span>
+    <!-- ======================================================= -->
+    <!-- 1. NUEVO: SELECCIÓN DE MOTIVO S.O.S EXACTO AL DISEÑO -->
+    <!-- ======================================================= -->
+    <div id="sos-reason-modal" class="fixed inset-0 bg-[#111111] z-[99990] hidden flex-col items-center justify-start pt-safe px-5 text-center transition-all overflow-y-auto pb-10">
+        <div class="animate-popIn w-full flex flex-col items-center mt-6">
+            <h2 class="text-[32px] font-black text-white mb-2 tracking-tight">¿Cuál es la emergencia?</h2>
+            <p class="text-gray-400 text-[15px] font-medium mb-10">Selecciona un motivo para alertar a la flota.</p>
+            
+            <div class="w-full max-w-sm flex flex-col gap-4 px-1 mx-auto">
+                <button onclick="startSosCountdown('💥', 'Choque o Accidente')" class="bg-[#1c1c1e] hover:bg-[#252528] border border-[#2a2a2c] text-white font-bold p-3.5 rounded-2xl flex items-center gap-5 transition-all active:scale-95 w-full shadow-lg">
+                    <div class="w-14 h-14 bg-[#3a1a1a] rounded-xl flex items-center justify-center text-3xl shrink-0">💥</div> 
+                    <span class="text-[17px] text-left leading-tight">Choque o<br>Accidente</span>
+                </button>
+                <button onclick="startSosCountdown('⚠️', 'Asalto o Robo en Ruta')" class="bg-[#1c1c1e] hover:bg-[#252528] border border-[#2a2a2c] text-white font-bold p-3.5 rounded-2xl flex items-center gap-5 transition-all active:scale-95 w-full shadow-lg">
+                    <div class="w-14 h-14 bg-[#3a2a0a] rounded-xl flex items-center justify-center text-3xl shrink-0">⚠️</div> 
+                    <span class="text-[17px] text-left leading-tight">Asalto o<br>Robo en Ruta</span>
+                </button>
+                <button onclick="startSosCountdown('🚑', 'Emergencia Médica')" class="bg-[#1c1c1e] hover:bg-[#252528] border border-[#2a2a2c] text-white font-bold p-3.5 rounded-2xl flex items-center gap-5 transition-all active:scale-95 w-full shadow-lg">
+                    <div class="w-14 h-14 bg-[#1a253a] rounded-xl flex items-center justify-center text-3xl shrink-0">🚑</div> 
+                    <span class="text-[17px] text-left leading-tight">Emergencia<br>Médica</span>
+                </button>
+                <button onclick="startSosCountdown('🛠️', 'Falla Mecánica')" class="bg-[#1c1c1e] hover:bg-[#252528] border border-[#2a2a2c] text-white font-bold p-3.5 rounded-2xl flex items-center gap-5 transition-all active:scale-95 w-full shadow-lg">
+                    <div class="w-14 h-14 bg-[#2a2a2a] rounded-xl flex items-center justify-center text-3xl shrink-0">🛠️</div> 
+                    <span class="text-[17px] text-left leading-tight">Falla<br>Mecánica</span>
+                </button>
+                <button onclick="startSosCountdown('⛽', 'Me quedé sin Combustible')" class="bg-[#1c1c1e] hover:bg-[#252528] border border-[#2a2a2c] text-white font-bold p-3.5 rounded-2xl flex items-center gap-5 transition-all active:scale-95 w-full shadow-lg">
+                    <div class="w-14 h-14 bg-[#3a301a] rounded-xl flex items-center justify-center text-3xl shrink-0">⛽</div> 
+                    <span class="text-[17px] text-left leading-tight">Me quedé sin<br>Combustible</span>
+                </button>
+            </div>
+
+            <button onclick="closeSosMenu()" class="mt-12 text-white font-bold py-3.5 px-10 rounded-full border border-[#444] hover:bg-[#1c1c1e] active:scale-95 transition-all text-base">
+                Cancelar
             </button>
         </div>
-
-        <button onclick="closeSosMenu()" class="mt-8 text-white/60 font-bold py-3 px-8 rounded-full border border-white/20 hover:bg-white/10 active:scale-95 transition-all shadow-inner">
-            Cancelar
-        </button>
     </div>
 
-    <!-- 2. CUENTA REGRESIVA S.O.S -->
-    <div id="sos-countdown-modal" class="fixed inset-0 bg-red-900/95 z-[99991] hidden flex-col items-center justify-center backdrop-blur-xl px-6 text-center">
-        <h2 class="text-3xl font-black text-white mb-2 tracking-tight">ENVIANDO ALERTA EN...</h2>
-        <p id="sos-selected-reason" class="text-red-200 text-lg font-bold mb-8 bg-black/30 px-6 py-2 rounded-full border border-red-500/30">Motivo</p>
+    <!-- ======================================================= -->
+    <!-- 2. NUEVO: CUENTA REGRESIVA S.O.S EXACTO AL DISEÑO -->
+    <!-- ======================================================= -->
+    <div id="sos-countdown-modal" class="fixed inset-0 bg-[#7f1d1d] z-[99991] hidden flex-col items-center justify-start pt-[max(env(safe-area-inset-top,60px),60px)] px-6 text-center overflow-hidden">
+        <h2 class="text-[34px] font-black text-white mb-6 tracking-tight leading-tight animate-popIn">ENVIANDO ALERTA<br>EN...</h2>
         
-        <div class="relative w-48 h-48 flex items-center justify-center mb-12">
+        <div class="bg-black/30 text-white font-bold px-6 py-2.5 rounded-full border border-white/10 flex items-center justify-center gap-2 mb-10 shadow-md animate-popIn">
+            <span id="sos-selected-emoji" class="text-xl">⛽</span>
+            <span id="sos-selected-text" class="text-lg">Sin Combustible</span>
+        </div>
+        
+        <div class="relative w-56 h-56 flex items-center justify-center mb-auto animate-popIn">
             <svg class="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="8"></circle>
                 <circle id="countdown-circle" cx="50" cy="50" r="45" fill="none" stroke="white" stroke-width="8" stroke-dasharray="283" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear"></circle>
             </svg>
-            <span class="text-8xl font-black text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.5)] font-mono" id="sos-pre-timer">5</span>
+            <span class="text-[100px] font-black text-white drop-shadow-lg" id="sos-pre-timer">3</span>
         </div>
         
-        <button onclick="cancelSosCountdown()" class="w-full max-w-xs bg-white text-red-600 font-black py-5 rounded-2xl shadow-2xl active:scale-95 transition-transform text-xl border-4 border-red-100 hover:bg-red-50">
+        <button onclick="cancelSosCountdown()" class="w-full max-w-xs bg-white text-[#b91c1c] font-black py-4 rounded-xl shadow-xl active:scale-95 transition-transform text-[19px] mb-12 animate-popIn hover:bg-red-50">
             CANCELAR ALERTA
         </button>
     </div>
 
-    <!-- PANTALLA DE S.O.S ACTIVO (Para quien lo INICIA - FINAL) -->
-    <div id="sos-active-modal" class="fixed inset-0 bg-red-600 z-[99992] hidden flex-col items-center justify-center px-6 text-center shadow-[inset_0_0_100px_rgba(0,0,0,0.5)]">
-        <div class="w-40 h-40 bg-white rounded-full flex items-center justify-center mb-8 animate-pulse shadow-[0_0_80px_rgba(255,255,255,0.6)] relative">
-            <div class="absolute inset-0 border-8 border-white rounded-full animate-ping opacity-50"></div>
-            <i class="fa-solid fa-triangle-exclamation text-7xl text-red-600"></i>
+    <!-- ======================================================= -->
+    <!-- 3. PANTALLA DE S.O.S ACTIVO EXACTO AL DISEÑO -->
+    <!-- ======================================================= -->
+    <div id="sos-active-modal" class="fixed inset-0 bg-[#dc2626] z-[99992] hidden flex-col items-center justify-center px-6 text-center">
+        <div class="w-48 h-48 bg-white/20 rounded-full flex items-center justify-center mb-10 relative animate-pulse-fast">
+            <div class="w-36 h-36 bg-white rounded-full flex items-center justify-center shadow-2xl relative z-10">
+                <i class="fa-solid fa-triangle-exclamation text-7xl text-[#dc2626]"></i>
+            </div>
         </div>
-        <h2 class="text-4xl font-black text-white mb-2 tracking-tight drop-shadow-lg">S.O.S ACTIVO</h2>
-        <p class="text-red-100 text-lg font-medium mb-10 max-w-xs leading-tight">Tu alerta está sonando en toda la flota y tu ubicación está siendo rastreada.</p>
         
-        <button onclick="finishSOS()" class="w-full max-w-xs bg-black/20 text-white border-2 border-white/50 font-black py-4 rounded-full hover:bg-black/40 shadow-2xl active:scale-95 transition-all text-lg backdrop-blur-sm">
+        <h2 class="text-4xl font-black text-white mb-4 tracking-tight drop-shadow-md">S.O.S ACTIVO</h2>
+        <p class="text-white/95 text-xl font-medium mb-16 max-w-sm leading-snug drop-shadow-sm">Tu alerta está sonando en toda la flota y tu ubicación está siendo rastreada.</p>
+        
+        <button onclick="finishSOS()" class="w-full max-w-xs bg-transparent text-white border-2 border-white font-black py-4 rounded-full active:bg-white/20 transition-all text-xl backdrop-blur-sm">
             DESACTIVAR ALERTA
         </button>
     </div>
 
     <!-- ANUNCIO S.O.S RECIBIDO (MEDIA PANTALLA) -->
-    <div id="sos-receive-modal" class="fixed inset-x-0 top-0 h-[50dvh] bg-red-600/95 backdrop-blur-2xl z-[99996] hidden flex flex-col items-center justify-center p-6 text-center shadow-[0_20px_50px_rgba(220,38,38,0.5)] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] -translate-y-full rounded-b-[40px] border-b-4 border-red-400">
-        <button onclick="dismissSosBanner()" class="absolute top-8 right-6 w-12 h-12 bg-black/20 rounded-full text-white flex items-center justify-center hover:bg-black/40 transition-colors active:scale-90 border border-white/20">
+    <div id="sos-receive-modal" class="fixed inset-x-0 top-0 h-[50dvh] bg-red-600/95 backdrop-blur-2xl z-[99996] hidden flex flex-col items-center justify-center p-6 text-center shadow-[0_20px_50px_rgba(220,38,38,0.5)] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] -translate-y-full rounded-b-[40px] border-b-4 border-red-400 pt-safe">
+        <button onclick="dismissSosBanner()" class="absolute top-10 right-6 w-12 h-12 bg-black/20 rounded-full text-white flex items-center justify-center hover:bg-black/40 transition-colors active:scale-90 border border-white/20">
             <i class="fa-solid fa-xmark text-2xl"></i>
         </button>
-        <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-5 animate-pulse text-red-600 shadow-xl relative">
+        <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-5 animate-pulse text-red-600 shadow-xl relative mt-4">
             <div class="absolute inset-0 border-4 border-white rounded-full animate-ping opacity-50"></div>
             <i class="fa-solid fa-triangle-exclamation text-5xl"></i>
         </div>
         <h2 class="text-3xl font-black text-white mb-2 tracking-tight drop-shadow-md">¡ALERTA S.O.S!</h2>
         
         <!-- Badge Motivo -->
-        <div id="sos-receive-reason" class="bg-black/30 text-white font-bold px-4 py-1.5 rounded-full text-sm mb-4 border border-white/20 shadow-inner">
+        <div id="sos-receive-reason" class="bg-black/30 text-white font-bold px-4 py-1.5 rounded-full text-sm mb-4 border border-white/20 shadow-inner flex items-center justify-center gap-2">
             Motivo Desconocido
         </div>
 
@@ -328,7 +342,7 @@
                 } catch(error) {
                     console.error("Error Auth Firebase:", error);
                     setTimeout(() => {
-                        showToast("⚠️ Falta un paso en Firebase", "Ve a tu proyecto > Authentication > y Activa el método 'Anónimo'.", "fa-triangle-exclamation", "text-red-500", "bg-red-50 border-red-200");
+                        showToast("⚠️ Falta un paso en Firebase", "Activa el método 'Anónimo' en tu proyecto.", "fa-triangle-exclamation", "text-red-500", "bg-red-50 border-red-200");
                     }, 2000);
                 }
             };
@@ -344,20 +358,21 @@
                 }
             });
 
-            window.updatePilotLocation = async (lat, lng, status, reason = '') => {
+            window.updatePilotLocation = async (lat, lng, status, reason = '', emoji = '') => {
                 if(!window.currentUser || !window.firebaseDb) return;
                 try {
                     const pilotRef = doc(window.firebaseDb, 'artifacts', window.firebaseAppId, 'public', 'data', 'pilotos', window.currentUser.uid);
                     await setDoc(pilotRef, {
                         lat, lng, status,
                         reason: reason,
+                        emoji: emoji,
                         speed: window.userSpeed || 0,
                         path: window.myPath || [],
                         name: localStorage.getItem('imade_pilot_name') || "Piloto Anónimo",
                         timestamp: Date.now()
                     });
                 } catch(error) {
-                    console.error("Error al escribir en la base de datos:", error);
+                    console.error("Error BD:", error);
                 }
             };
 
@@ -405,8 +420,9 @@
                         let dist = window.calculateDistance ? window.calculateDistance(window.userLat, window.userLng, sosPilot.lat, sosPilot.lng) : null;
                         let distStr = dist ? dist.toFixed(1) + ' km' : 'distancia desconocida';
                         let reasonText = sosPilot.reason || "Emergencia no especificada";
+                        let emoji = sosPilot.emoji || '🚨';
                         
-                        document.getElementById('sos-receive-reason').innerText = reasonText;
+                        document.getElementById('sos-receive-reason').innerHTML = `<span>${emoji}</span> <span>${reasonText}</span>`;
                         document.getElementById('sos-receive-text').innerHTML = `<strong>${sosPilot.name}</strong> solicita apoyo a <strong>${distStr}</strong>.<br><span class="text-sm opacity-80 mt-1 block">Velocidad actual: ${sosPilot.speed || 0} km/h</span>`;
                         
                         const sosBanner = document.getElementById('sos-receive-modal');
@@ -470,7 +486,7 @@
             });
 
         } else {
-            window.updatePilotLocation = async (lat, lng, status, reason) => { /* Silencioso */ };
+            window.updatePilotLocation = async (lat, lng, status, reason, emoji) => { /* Silencioso */ };
             window.startPilotsListener = () => { /* Fallback */ };
         }
     </script>
@@ -499,10 +515,9 @@
             <!-- PANTALLA 1: INICIO -->
             <div id="screen-home" class="screen w-full h-full flex flex-col px-5 py-3 overflow-hidden">
                 
-                <div class="flex flex-col items-center justify-center mt-1 mb-3">
-                    <!-- SE APLICÓ EL LOGO logo.png INTERNO AQUÍ Y SE AÑADIÓ ANIMACIÓN FLOTANTE -->
-                    <img src="logo.png" alt="Grupo Imade" class="h-16 object-contain mb-3 filter drop-shadow-md animate-floating" onerror="this.src='https://cdn-icons-png.flaticon.com/512/854/854878.png'">
-                    <h2 class="text-2xl font-black text-imade-dark text-center tracking-tight">¡Bienvenido!</h2>
+                <div class="flex flex-col items-center justify-center mt-2 mb-4">
+                    <img src="logo.png" alt="Grupo Imade" class="h-[70px] object-contain mb-3 filter drop-shadow-md animate-floating" onerror="this.src='https://cdn-icons-png.flaticon.com/512/854/854878.png'">
+                    <h2 class="text-2xl font-black text-imade-dark text-center tracking-tight mt-1">¡Bienvenido!</h2>
                 </div>
                 
                 <!-- Tarjetas de Acción Rápida -->
@@ -524,7 +539,7 @@
                 </div>
 
                 <!-- Estados Divididos: GPS y Piloto -->
-                <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="grid grid-cols-2 gap-3 mb-5">
                     <!-- Satelital -->
                     <div class="bg-white rounded-3xl p-3 shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center gap-1.5 transition-colors relative overflow-hidden">
                         <div id="home-gps-icon" class="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 transition-colors z-10">
@@ -547,8 +562,8 @@
                     </div>
                 </div>
 
-                <!-- BOTÓN S.O.S MEJORADO -->
-                <button onclick="openSosMenu()" class="w-full bg-gradient-to-r from-red-500 to-red-600 text-white font-black py-4 rounded-3xl shadow-[0_10px_25px_rgba(239,68,68,0.4)] hover:shadow-[0_10px_35px_rgba(239,68,68,0.5)] transition-all active:scale-95 flex justify-center items-center border border-red-400 overflow-hidden relative group">
+                <!-- BOTÓN S.O.S -->
+                <button onclick="openSosMenu()" class="w-full bg-gradient-to-r from-red-500 to-red-600 text-white font-black py-4 rounded-[1.5rem] shadow-[0_10px_25px_rgba(239,68,68,0.4)] hover:shadow-[0_10px_35px_rgba(239,68,68,0.5)] transition-all active:scale-95 flex justify-center items-center border border-red-400 overflow-hidden relative group">
                     <div class="absolute inset-0 bg-white/20 w-full h-full transform -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
                     <div class="bg-white/20 p-2 rounded-xl mr-3 backdrop-blur-sm border border-white/30">
                         <i class="fa-solid fa-triangle-exclamation text-xl animate-pulse"></i>
@@ -562,7 +577,7 @@
                         <i class="fa-solid fa-laptop-code text-imade-light"></i>
                         <span>Creado por <strong>Depto. de IT</strong></span>
                     </div>
-                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest" id="app-version-text">Versión 2.1</p>
+                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest" id="app-version-text">Versión 3.0</p>
                 </div>
             </div>
 
@@ -593,7 +608,7 @@
 
             <!-- PANTALLA 3: MAPA DE RUTA (CON FICHA DESPLEGABLE) -->
             <div id="screen-map" class="screen hidden absolute inset-0 flex flex-col z-[100] bg-gray-200">
-                <div class="absolute top-6 left-4 right-4 z-[400] flex justify-between items-center pointer-events-none">
+                <div class="absolute top-safe left-4 right-4 mt-2 z-[400] flex justify-between items-center pointer-events-none">
                     <button onclick="closeMap()" class="bg-white/90 backdrop-blur-xl w-12 h-12 rounded-full shadow-lg text-imade-dark hover:bg-gray-50 flex items-center justify-center transition-transform active:scale-90 pointer-events-auto border border-white/50">
                         <i class="fa-solid fa-arrow-left text-lg"></i>
                     </button>
@@ -708,7 +723,7 @@
                 </div>
                 <div class="flex-1 w-full relative">
                     <div id="map-pilots" class="absolute inset-0 bg-gray-100"></div>
-                    <button onclick="window.centerPilotsMap()" class="absolute bottom-6 right-4 z-[400] bg-white/90 backdrop-blur-xl w-14 h-14 rounded-full shadow-lg text-imade-dark hover:bg-gray-50 flex items-center justify-center transition-transform active:scale-90 border border-white/50 animate-pulse-fast">
+                    <button onclick="window.centerPilotsMap()" class="absolute bottom-safe right-4 mb-4 z-[400] bg-white/90 backdrop-blur-xl w-14 h-14 rounded-full shadow-lg text-imade-dark hover:bg-gray-50 flex items-center justify-center transition-transform active:scale-90 border border-white/50 animate-pulse-fast">
                         <i class="fa-solid fa-location-crosshairs text-xl"></i>
                     </button>
                 </div>
@@ -938,7 +953,7 @@
         }
 
         // =========================================================================
-        // LÓGICA DE ALARMA Y SOS MEJORADA
+        // LÓGICA DE ALARMA Y SOS MEJORADA (SONIDO/VIBRACIÓN)
         // =========================================================================
         let sosInterval;
         let isSosPlaying = false;
@@ -974,12 +989,14 @@
         };
 
         let activeSosReason = '';
+        let activeSosEmoji = '';
         let countdownTimer;
 
         // 1. Abre el menú para seleccionar motivo
         window.openSosMenu = function() {
             if (!window.userLat || !window.userLng) { showToast("Error", "GPS no disponible para enviar S.O.S"); return; }
             document.getElementById('sos-reason-modal').classList.remove('hidden');
+            document.getElementById('sos-reason-modal').classList.add('flex');
             
             // Asegurar que el contexto de audio se desbloquee por interacción del usuario
             if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -988,18 +1005,23 @@
 
         window.closeSosMenu = function() {
             document.getElementById('sos-reason-modal').classList.add('hidden');
+            document.getElementById('sos-reason-modal').classList.remove('flex');
         };
 
-        // 2. Inicia la cuenta regresiva de 5 segundos
-        window.startSosCountdown = function(reason) {
+        // 2. Inicia la cuenta regresiva de 3 segundos exacto al diseño
+        window.startSosCountdown = function(emoji, reason) {
             activeSosReason = reason;
-            document.getElementById('sos-reason-modal').classList.add('hidden');
+            activeSosEmoji = emoji;
+            closeSosMenu();
             
             const countdownModal = document.getElementById('sos-countdown-modal');
             countdownModal.classList.remove('hidden');
-            document.getElementById('sos-selected-reason').innerText = reason;
+            countdownModal.classList.add('flex');
             
-            let timeLeft = 5;
+            document.getElementById('sos-selected-emoji').innerText = emoji;
+            document.getElementById('sos-selected-text').innerText = reason;
+            
+            let timeLeft = 3; // Diseño muestra 3
             document.getElementById('sos-pre-timer').innerText = timeLeft;
             
             // Animación del círculo SVG
@@ -1007,7 +1029,7 @@
             circle.style.transition = 'none';
             circle.style.strokeDashoffset = '0';
             setTimeout(() => {
-                circle.style.transition = 'stroke-dashoffset 5s linear';
+                circle.style.transition = 'stroke-dashoffset 3s linear'; // Ajustado a 3s
                 circle.style.strokeDashoffset = '283';
             }, 50);
 
@@ -1025,7 +1047,10 @@
         // 3. Cancela la alerta antes de que se envíe
         window.cancelSosCountdown = function() {
             clearInterval(countdownTimer);
-            document.getElementById('sos-countdown-modal').classList.add('hidden');
+            const countdownModal = document.getElementById('sos-countdown-modal');
+            countdownModal.classList.add('hidden');
+            countdownModal.classList.remove('flex');
+            
             showToast("Cancelado", "Alerta S.O.S abortada.", "fa-check");
             const circle = document.getElementById('countdown-circle');
             circle.style.transition = 'none';
@@ -1035,10 +1060,14 @@
         // 4. Se ejecuta si la cuenta regresiva llega a 0
         window.confirmSos = function() {
             document.getElementById('sos-countdown-modal').classList.add('hidden');
-            document.getElementById('sos-active-modal').classList.remove('hidden');
+            document.getElementById('sos-countdown-modal').classList.remove('flex');
+            
+            const activeModal = document.getElementById('sos-active-modal');
+            activeModal.classList.remove('hidden');
+            activeModal.classList.add('flex');
             
             // Enviar a Firebase con el motivo
-            if (window.updatePilotLocation) window.updatePilotLocation(window.userLat, window.userLng, 'SOS', activeSosReason);
+            if (window.updatePilotLocation) window.updatePilotLocation(window.userLat, window.userLng, 'SOS', activeSosReason, activeSosEmoji);
             
             // Forzar reproducción de alarma local en el dispositivo del remitente
             window.manageSOSAudio(true);
@@ -1046,9 +1075,12 @@
 
         // 5. Apagar la alerta activa
         window.finishSOS = function() {
-            document.getElementById('sos-active-modal').classList.add('hidden');
+            const activeModal = document.getElementById('sos-active-modal');
+            activeModal.classList.add('hidden');
+            activeModal.classList.remove('flex');
+            
             if (window.updatePilotLocation && window.userLat && window.userLng) {
-                window.updatePilotLocation(window.userLat, window.userLng, 'activo', '');
+                window.updatePilotLocation(window.userLat, window.userLng, 'activo', '', '');
             }
             window.manageSOSAudio(false); // Detener audio local
             showToast("S.O.S Finalizado", "Tu estado volvió a activo", "fa-shield-check");
@@ -1241,7 +1273,7 @@
                         }
 
                         if(window.updatePilotLocation && document.getElementById('sos-active-modal').classList.contains('hidden')){
-                            window.updatePilotLocation(window.userLat, window.userLng, 'activo', '');
+                            window.updatePilotLocation(window.userLat, window.userLng, 'activo', '', '');
                         }
 
                         if (window.renderPilotsMap && !document.getElementById('screen-pilots').classList.contains('hidden')) {
@@ -1282,7 +1314,7 @@
         }
 
         // =========================================================================
-        // MAPA DE FLOTA MEJORADO (TRAYECTORIAS, VELOCIDAD, CAMIONES MULTICOLOR Y RESPONSIVE)
+        // MAPA DE FLOTA MEJORADO (TRAYECTORIAS, VELOCIDAD, CAMIONES MULTICOLOR Y BURBUJA RESPONSIVE)
         // =========================================================================
         window.renderPilotsMap = function(pilots = []) {
             let startLat = window.userLat || 14.6349;
@@ -1311,7 +1343,7 @@
                 });
             }
             
-            // Cleanup markers/paths that are no longer active
+            // Cleanup
             const currentIds = displayPilots.map(p => p.id);
             for (const id in pilotMarkers) {
                 if (!currentIds.includes(id)) {
@@ -1328,15 +1360,15 @@
                 if (pilot.status === 'inactivo' || pilot.lat === 0) return; 
 
                 const isSOS = pilot.status === 'SOS';
-                // Usar color único para el camión o Imade Dark para uno mismo
+                // Asigna color por ID o Corporativo si es el usuario propio
                 let baseColor = isSOS ? '#ef4444' : getColorForId(pilot.id);
-                if (pilot.id === myId && !isSOS) baseColor = '#22387a'; // Tú en color corporativo
+                if (pilot.id === myId && !isSOS) baseColor = '#22387a'; 
 
                 const pulseClass = isSOS ? 'sos-danger-blink' : '';
-                const iconCls = 'fa-truck'; // Icono de camión
+                const iconCls = 'fa-truck'; // Icono de camión!
                 const speed = pilot.speed || 0;
 
-                // Dibujar Trayectoria (Path)
+                // Dibujar Trayectoria Animada
                 if (pilot.path && pilot.path.length > 1) {
                     if (pilotPolylines[pilot.id]) {
                         pilotPolylines[pilot.id].setLatLngs(pilot.path);
@@ -1351,22 +1383,28 @@
                     }
                 }
 
-                // Dibujar Marcador (Burbuja ancha y texto responsive)
-                // Se centra perfectamente usando iconAnchor y flex layout
+                // ==========================================
+                // BURBUJA BLANCA MEJORADA RESPONSIVE Y CENTRADA
+                // ==========================================
                 const iconHtml = `
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
-                        <div class="${pulseClass}" style='background-color:${baseColor}; width:36px; height:36px; border-radius:50%; border:3px solid white; box-shadow:0 6px 16px rgba(0,0,0,0.4); display:flex; justify-content:center; align-items:center; transition: all 0.3s; z-index: 1000;'>
-                            <i class='fa-solid ${iconCls}' style='color:white; font-size:14px;'></i>
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end; width: 100%; height: 100%;">
+                        
+                        <!-- Burbuja Blanca de Nombre (Responsive) -->
+                        <div style="background: rgba(255,255,255,0.95); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 10px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid #e2e8f0; color: #1e293b; max-width: 140px; display: flex; flex-direction: column; align-items: center; line-height: 1.1; margin-bottom: 6px; z-index:999;">
+                            <span style="font-size: 11px; font-weight: 800; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">${pilot.name} ${isSOS ? '<span style="color:red; animation: ping 1s infinite;">🚨</span>' : ''}</span>
+                            <span style="color: #64748b; font-size: 9px; font-weight: 700; margin-top: 2px;">${speed} km/h</span>
                         </div>
-                        <div style="background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); padding: 4px 10px; border-radius: 14px; margin-top: 6px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid #e2e8f0; color: #1e293b; max-width: 150px; width: max-content; display: flex; flex-direction: column; align-items: center; line-height: 1.2;">
-                            <span style="font-size: 11px; font-weight: 800; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${pilot.name} ${isSOS ? '<span style="color:red; animation: ping 1s infinite;">🚨</span>' : ''}</span>
-                            <span style="color: #64748b; font-size: 9px; font-weight: 700; margin-top: 1px;">${speed} km/h</span>
+                        
+                        <!-- Círculo del Camión -->
+                        <div class="${pulseClass}" style='background-color:${baseColor}; width:34px; height:34px; border-radius:50%; border:2px solid white; box-shadow:0 4px 10px rgba(0,0,0,0.3); display:flex; justify-content:center; align-items:center; z-index: 1000; flex-shrink: 0;'>
+                            <i class='fa-solid ${iconCls}' style='color:white; font-size:13px;'></i>
                         </div>
+
                     </div>
                 `;
 
-                // iconSize grande para permitir que el HTML se centre por sí solo y el ancla apunte al centro.
-                const icon = L.divIcon({ className: 'custom-div-icon', html: iconHtml, iconSize: [160, 100], iconAnchor: [80, 18] });
+                // iconSize amplio para que la burbuja se expanda hacia los lados, anclado en la base central (donde está el camión)
+                const icon = L.divIcon({ className: 'custom-div-icon', html: iconHtml, iconSize: [160, 80], iconAnchor: [80, 75] });
 
                 if (pilotMarkers[pilot.id]) {
                     pilotMarkers[pilot.id].setLatLng([pilot.lat, pilot.lng]);
@@ -1433,7 +1471,7 @@
 
                 const card = document.createElement('div');
                 card.className = "bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4 active:scale-95 transition-transform cursor-pointer hover:border-blue-200 animate-slideIn opacity-0";
-                card.style.animationDelay = `${index * 0.05}s`; // Animación en cascada
+                card.style.animationDelay = `${index * 0.04}s`; // Animación en cascada rápida
                 card.onclick = () => selectClientForRoute(client);
                 card.innerHTML = `<div class="w-12 h-12 rounded-2xl bg-gray-50 text-imade-dark flex items-center justify-center font-black text-lg shrink-0 border border-gray-200">${initial}</div><div class="flex-1 min-w-0"><div class="flex justify-between items-start mb-0.5"><h3 class="font-bold text-gray-900 text-[13px] truncate leading-tight">${client.nombre || 'Sin Nombre'}</h3>${distBadge}</div><p class="text-[11px] text-gray-500 truncate mt-1 font-medium"><span class="font-bold text-gray-800 bg-gray-100 px-1.5 py-0.5 rounded mr-1"># ${client.codigo || 'S/N'}</span> ${subtext}</p></div>`;
                 container.appendChild(card);
