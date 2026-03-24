@@ -434,7 +434,7 @@
                     <i id="theme-icon-moon" class="fa-solid fa-moon dark:hidden"></i>
                     <i id="theme-icon-sun" class="fa-solid fa-sun hidden dark:block text-yellow-400"></i>
                 </button>
-                <!-- Botón Sync (Ahora con Badge para Offline) -->
+                <!-- Botón Sync -->
                 <button id="btn-sync" onclick="syncData()" class="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-700 text-imade-dark dark:text-gray-300 hover:bg-imade-light hover:text-white flex items-center justify-center transition-all shadow-sm active:scale-90 relative" title="Sincronizar Datos">
                     <i class="fa-solid fa-rotate"></i>
                     <span id="sync-badge" class="absolute -top-1 -right-1 bg-orange-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center hidden">!</span>
@@ -784,6 +784,84 @@
              }
         });
 
+        // =========================================================================
+        // NUEVA LÓGICA DE ALARMA: FIX PARA iOS Y ANDROID (DESBLOQUEO DE AUDIO)
+        // =========================================================================
+        let audioCtx = null;
+        let audioUnlocked = false;
+
+        // FIX: Los navegadores bloquean el audio si no hay interacción previa del usuario.
+        // Esto dispara un sonido mudo en el primer clic/toque para "desbloquear" la bocina.
+        const unlockAudioEngine = () => {
+            if (audioUnlocked) return;
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!audioCtx) audioCtx = new AudioContext();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                gain.gain.value = 0; // Silencio absoluto
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(0);
+                osc.stop(audioCtx.currentTime + 0.1);
+                
+                audioUnlocked = true;
+                document.removeEventListener('touchstart', unlockAudioEngine);
+                document.removeEventListener('click', unlockAudioEngine);
+            } catch(e) {}
+        };
+
+        // Escuchar el primer toque en toda la app para habilitar el audio
+        document.addEventListener('touchstart', unlockAudioEngine, {once: true});
+        document.addEventListener('click', unlockAudioEngine, {once: true});
+
+        let sosInterval;
+        let isSosPlaying = false;
+        
+        window.manageSOSAudio = function(anySOS) {
+            if (anySOS && !isSosPlaying) {
+                isSosPlaying = true;
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if(!audioCtx) audioCtx = new AudioContext();
+                    if(audioCtx.state === 'suspended') audioCtx.resume();
+                } catch(e) {}
+                
+                sosInterval = setInterval(() => {
+                    try {
+                        if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+
+                        // Sonido Web Audio API (Efecto Sirena más profesional)
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                        osc.frequency.linearRampToValueAtTime(1200, audioCtx.currentTime + 0.2);
+                        
+                        gain.gain.setValueAtTime(0, audioCtx.currentTime);
+                        gain.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.05); // Fade in rápido (evita chasquidos)
+                        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);   // Fade out
+                        
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(audioCtx.currentTime);
+                        osc.stop(audioCtx.currentTime + 0.4);
+
+                        // VIBRACIÓN CONTINUA DE HARDWARE (Solo Android, iOS Safari no lo permite)
+                        if (navigator.vibrate) {
+                            navigator.vibrate([400, 200]);
+                        }
+                    } catch(e) {}
+                }, 600); // Se repite cada 600ms
+            } else if (!anySOS && isSosPlaying) {
+                isSosPlaying = false;
+                clearInterval(sosInterval);
+                if (navigator.vibrate) navigator.vibrate(0); // Apagar vibración
+            }
+        };
+
         // ====== INICIALIZACIÓN ======
         window.onload = () => {
             loadClients();
@@ -791,7 +869,7 @@
             setTimeout(syncData, 1000); 
             setupSearchInput();
             checkPilotIdentity();
-            updateOfflineBadge(); // Refresca el icono de sincronizar
+            updateOfflineBadge(); 
             
             setTimeout(() => {
                 const handle = document.getElementById('drag-handle');
@@ -828,9 +906,7 @@
                 
                 checkPermissions();
                 window.requestWakeLock();
-                
-                if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if(audioCtx.state === 'suspended') audioCtx.resume();
+                unlockAudioEngine(); // Asegurar desbloqueo aquí también por si acaso
 
                 if (window.updatePilotLocation && window.userLat && window.userLng) {
                     window.updatePilotLocation(window.userLat, window.userLng, 'activo');
@@ -921,7 +997,6 @@
         }
 
         // SOS Lógica...
-        let mySosInterval;
         function triggerSOS() {
             if (!window.userLat || !window.userLng) { showToast("Error", "GPS no disponible para S.O.S"); return; }
             if (window.updatePilotLocation) window.updatePilotLocation(window.userLat, window.userLng, 'SOS');
