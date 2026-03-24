@@ -19,10 +19,20 @@
     <!-- Manifest codificado -->
     <link rel="manifest" href='data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22RutasApp%20Grupo%20Imade%22%2C%22short_name%22%3A%22RutasApp%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f8fafc%22%2C%22theme_color%22%3A%22%2322387a%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F854%2F854878.png%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%2C%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F854%2F854878.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D'>
 
+    <!-- SCRIPT INICIAL PARA MODO OSCURO (Evita parpadeo blanco) -->
+    <script>
+        if (localStorage.getItem('imade_theme') === 'dark' || (!('imade_theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class', // Activamos el modo oscuro manual por clase
             theme: {
                 extend: {
                     colors: {
@@ -60,12 +70,31 @@
             -webkit-backdrop-filter: blur(20px);
             border-top: 1px solid rgba(255,255,255,0.6);
         }
+        /* Glass Panel en Modo Oscuro */
+        html.dark .glass-panel {
+            background: rgba(31, 41, 55, 0.85);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
         .ios-toast {
             background: rgba(255, 255, 255, 0.75);
             backdrop-filter: blur(25px) saturate(180%);
             -webkit-backdrop-filter: blur(25px) saturate(180%);
             border: 1px solid rgba(255, 255, 255, 0.5);
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+        /* Toast en Modo Oscuro */
+        html.dark .ios-toast {
+            background: rgba(31, 41, 55, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* FILTRO MÁGICO PARA MAPA NOCTURNO EN LEAFLET */
+        html.dark .leaflet-layer,
+        html.dark .leaflet-control-zoom-in,
+        html.dark .leaflet-control-zoom-out,
+        html.dark .leaflet-control-attribution {
+            filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
         }
         
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -98,9 +127,9 @@
 
     <script>
         // =====================================================================
-        // SITEMA DE AUTO-ACTUALIZACIÓN PARA PWAs (VERSIÓN 1.6)
+        // SITEMA DE AUTO-ACTUALIZACIÓN PARA PWAs (VERSIÓN 1.7 - Offline & DarkMode)
         // =====================================================================
-        const APP_VERSION = "1.6"; // <-- Versión 1.6: Alarma agresiva en background simulado
+        const APP_VERSION = "1.7"; 
         const currentVersion = localStorage.getItem('imade_app_version');
         
         if (currentVersion !== APP_VERSION) {
@@ -124,27 +153,27 @@
         }
     </script>
 </head>
-<body class="text-gray-800 antialiased h-[100dvh] w-full overflow-hidden flex justify-center bg-gray-100">
+<body class="text-gray-800 dark:text-gray-100 antialiased h-[100dvh] w-full overflow-hidden flex justify-center bg-gray-100 dark:bg-gray-950 transition-colors duration-300">
 
     <!-- PANTALLA DE INSTALACIÓN OBLIGATORIA (PWA) -->
-    <div id="install-screen" class="fixed inset-0 z-[99999] bg-white flex flex-col items-center justify-center p-6 text-center hidden">
+    <div id="install-screen" class="fixed inset-0 z-[99999] bg-white dark:bg-gray-900 flex flex-col items-center justify-center p-6 text-center hidden">
         <img src="app.jpg" alt="RutasApp" class="w-32 h-32 rounded-3xl shadow-2xl mb-6 object-cover" onerror="this.src='https://cdn-icons-png.flaticon.com/512/854/854878.png'">
-        <h2 class="text-3xl font-black text-imade-dark mb-3">Instala RutasApp</h2>
-        <p class="text-gray-500 mb-8 font-medium px-4 leading-relaxed text-sm">Para continuar y garantizar que el GPS funcione en tiempo real, instala la aplicación dando clic en el botón de abajo.</p>
+        <h2 class="text-3xl font-black text-imade-dark dark:text-white mb-3">Instala RutasApp</h2>
+        <p class="text-gray-500 dark:text-gray-400 mb-8 font-medium px-4 leading-relaxed text-sm">Para continuar y garantizar que el GPS funcione en tiempo real, instala la aplicación dando clic en el botón de abajo.</p>
         
         <button id="btn-install" class="w-full max-w-xs bg-imade-light text-white font-black py-4 rounded-2xl shadow-[0_10px_20px_rgba(54,168,225,0.3)] active:scale-95 transition-transform text-lg flex items-center justify-center">
             <i class="fa-solid fa-download mr-3"></i> Instalar Ahora
         </button>
         
-        <div id="install-instructions" class="hidden mt-6 bg-blue-50 border border-blue-100 p-5 rounded-3xl w-full max-w-xs">
+        <div id="install-instructions" class="hidden mt-6 bg-blue-50 dark:bg-gray-800 border border-blue-100 dark:border-gray-700 p-5 rounded-3xl w-full max-w-xs">
             <div id="apple-instructions" class="hidden">
-                <p class="text-sm text-imade-dark font-semibold leading-relaxed">
+                <p class="text-sm text-imade-dark dark:text-gray-200 font-semibold leading-relaxed">
                     <i class="fa-brands fa-apple text-xl mb-2 block"></i>
                     En tu iPhone, toca el ícono de Compartir <i class="fa-solid fa-arrow-up-from-bracket mx-1 text-blue-500"></i> abajo y selecciona <br><strong>"Agregar a la pantalla de inicio" <i class="fa-solid fa-square-plus text-blue-500 ml-1"></i></strong>.
                 </p>
             </div>
             <div id="android-instructions" class="hidden">
-                <p class="text-sm text-imade-dark font-semibold leading-relaxed">
+                <p class="text-sm text-imade-dark dark:text-gray-200 font-semibold leading-relaxed">
                     <i class="fa-brands fa-android text-xl mb-2 block text-green-500"></i>
                     En tu Android, toca los 3 puntos <i class="fa-solid fa-ellipsis-vertical mx-1"></i> arriba a la derecha y selecciona <br><strong>"Instalar aplicación"</strong> o <strong>"Agregar a la pantalla principal"</strong>.
                 </p>
@@ -153,30 +182,30 @@
 
         <div id="installed-msg" class="hidden flex-col items-center w-full max-w-xs">
             <div class="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mb-4 text-4xl shadow-inner"><i class="fa-solid fa-check"></i></div>
-            <p class="text-imade-dark font-black text-xl">¡Instalación exitosa!</p>
-            <p class="text-gray-500 text-sm mt-3 font-medium px-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">Esta pestaña ya no sirve. Ciérrala y abre la aplicación directamente desde la pantalla de inicio de tu celular.</p>
+            <p class="text-imade-dark dark:text-white font-black text-xl">¡Instalación exitosa!</p>
+            <p class="text-gray-500 dark:text-gray-400 text-sm mt-3 font-medium px-4 bg-gray-50 dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">Esta pestaña ya no sirve. Ciérrala y abre la aplicación directamente desde la pantalla de inicio de tu celular.</p>
         </div>
 
-        <button id="btn-bypass" class="mt-8 text-sm font-bold text-gray-400 hover:text-gray-600 underline underline-offset-4 active:scale-95 transition-all">
+        <button id="btn-bypass" class="mt-8 text-sm font-bold text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline underline-offset-4 active:scale-95 transition-all">
             Continuar en navegador web
         </button>
     </div>
 
     <!-- MURO DE PERMISOS (FORZAR NOTIFICACIONES) -->
     <div id="permissions-modal" class="fixed inset-0 bg-black/80 z-[99995] hidden flex-col items-center justify-center backdrop-blur-md px-6 text-center">
-        <div class="bg-white p-7 rounded-[32px] w-full max-w-sm text-center shadow-2xl modal-fade">
-            <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-sm">
+        <div class="bg-white dark:bg-gray-800 p-7 rounded-[32px] w-full max-w-sm text-center shadow-2xl modal-fade">
+            <div class="w-20 h-20 bg-blue-50 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white dark:border-gray-800 shadow-sm">
                 <i class="fa-solid fa-bell text-4xl text-imade-light animate-bounce"></i>
             </div>
-            <h3 class="text-xl font-black text-gray-900 mb-2 tracking-tight">Permisos Requeridos</h3>
-            <p class="text-gray-500 text-sm mb-6 font-medium">Para recibir alertas de S.O.S. de tus compañeros y garantizar tu seguridad, debes permitir que RutasApp te envíe notificaciones.</p>
+            <h3 class="text-xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">Permisos Requeridos</h3>
+            <p class="text-gray-500 dark:text-gray-400 text-sm mb-6 font-medium">Para recibir alertas de S.O.S. de tus compañeros y garantizar tu seguridad, debes permitir que RutasApp te envíe notificaciones.</p>
             <button onclick="requestAllPermissions()" class="w-full bg-imade-dark text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-transform flex items-center justify-center">
                 <i class="fa-solid fa-check-double mr-2"></i> Aceptar y Activar
             </button>
         </div>
     </div>
 
-    <!-- PANTALLA DE S.O.S ACTIVO (Para quien lo INICIA) -->
+    <!-- PANTALLA DE S.O.S ACTIVO -->
     <div id="sos-active-modal" class="fixed inset-0 bg-red-900/95 z-[99990] hidden flex-col items-center justify-center backdrop-blur-md px-6 text-center">
         <div class="w-32 h-32 bg-red-500 rounded-full flex items-center justify-center mb-6 animate-pulse shadow-[0_0_50px_rgba(239,68,68,0.6)]">
             <i class="fa-solid fa-triangle-exclamation text-6xl text-white"></i>
@@ -191,7 +220,7 @@
         </button>
     </div>
 
-    <!-- ANUNCIO S.O.S RECIBIDO (MEDIA PANTALLA) PARA ANDROID/IOS FALLBACK -->
+    <!-- ANUNCIO S.O.S RECIBIDO -->
     <div id="sos-receive-modal" class="fixed inset-x-0 top-0 h-[50dvh] bg-red-600/95 backdrop-blur-xl z-[99996] hidden flex flex-col items-center justify-center p-6 text-center shadow-[0_20px_50px_rgba(220,38,38,0.5)] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] -translate-y-full rounded-b-[40px] border-b-4 border-red-400">
         <button onclick="dismissSosBanner()" class="absolute top-8 right-6 w-12 h-12 bg-black/20 rounded-full text-white flex items-center justify-center hover:bg-black/40 transition-colors active:scale-90">
             <i class="fa-solid fa-xmark text-2xl"></i>
@@ -219,9 +248,6 @@
         let firebaseConfig = {};
         try { firebaseConfig = JSON.parse(configStr); } catch(e) {}
 
-        // =====================================================================
-        // CONFIGURACIÓN DE FIREBASE
-        // =====================================================================
         firebaseConfig = {
             apiKey: "AIzaSyDCum0Z8j33F2g8aVZxaPIzyWaN1tunSTk",
             authDomain: "rutasapp-imade.firebaseapp.com",
@@ -275,7 +301,6 @@
                 }
             };
 
-            // Función para ocultar el anuncio de SOS manualmente (El sonido no se apaga aquí)
             window.dismissSosBanner = function() {
                 const sosBanner = document.getElementById('sos-receive-modal');
                 sosBanner.classList.remove('translate-y-0');
@@ -311,18 +336,15 @@
                     
                     if (window.manageSOSAudio) window.manageSOSAudio(anySOS); 
 
-                    // Ocultar banner si ya no hay SOS en curso
                     if (!anySOS && window.wasSosActive) {
                         window.dismissSosBanner();
                     }
 
-                    // LÓGICA AGRESIVA DE NOTIFICACIONES Y ANUNCIO S.O.S
                     if (anySOS && !window.wasSosActive && activeSosPilots.length > 0) {
                         let sosPilot = activeSosPilots[0];
                         let dist = window.calculateDistance ? window.calculateDistance(window.userLat, window.userLng, sosPilot.lat, sosPilot.lng) : null;
                         let distStr = dist ? dist.toFixed(1) + ' km' : 'distancia desconocida';
                         
-                        // 1. Mostrar el Banner Visual Interno (Media Pantalla)
                         document.getElementById('sos-receive-text').innerHTML = `El piloto <strong>${sosPilot.name}</strong> solicita apoyo urgente a <strong>${distStr}</strong>.`;
                         const sosBanner = document.getElementById('sos-receive-modal');
                         sosBanner.classList.remove('hidden');
@@ -333,10 +355,8 @@
                             });
                         });
 
-                        // 2. Intentar despertar la pantalla manteniendo el WakeLock activo
                         if (window.requestWakeLock) window.requestWakeLock();
 
-                        // 3. Notificación OS Push (Usando Tag y Renotify para forzar que vuelva a sonar en Android)
                         const notifTitle = "🚨 ALERTA S.O.S 🚨";
                         const notifOptions = {
                             body: `URGENTE: ${sosPilot.name} solicita apoyo a ${distStr}.`,
@@ -344,7 +364,7 @@
                             badge: "https://cdn-icons-png.flaticon.com/512/854/854878.png",
                             vibrate: [500, 250, 500, 250, 1000, 250, 500, 250, 500],
                             requireInteraction: true,
-                            tag: 'sos-alert', // El TAG y RENOTIFY hacen que Android no agrupe en silencio
+                            tag: 'sos-alert', 
                             renotify: true
                         };
 
@@ -382,7 +402,6 @@
             document.addEventListener("visibilitychange", () => {
                 if (document.visibilityState === 'visible') {
                     if(window.requestWakeLock) window.requestWakeLock();
-                    // Si se abrió la app y hay SOS, asegurar que suena/vibra
                     if(window.wasSosActive && window.manageSOSAudio) {
                         window.manageSOSAudio(true);
                     }
@@ -395,22 +414,32 @@
         }
     </script>
 
-    <div id="app" class="w-full max-w-md bg-imade-bg h-full relative shadow-2xl overflow-hidden flex flex-col pt-safe">
+    <div id="app" class="w-full max-w-md bg-imade-bg dark:bg-gray-900 h-full relative shadow-2xl overflow-hidden flex flex-col pt-safe transition-colors duration-300">
 
         <!-- HEADER -->
-        <header class="bg-white/90 backdrop-blur-md px-5 py-4 flex justify-between items-center z-20 shrink-0 border-b border-gray-100/50 relative">
+        <header class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md px-5 py-4 flex justify-between items-center z-20 shrink-0 border-b border-gray-100/50 dark:border-gray-700/50 relative transition-colors duration-300">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-gradient-to-br from-imade-dark to-blue-800 rounded-xl flex items-center justify-center text-white shadow-sm">
                     <i class="fa-solid fa-map-location-dot text-lg"></i>
                 </div>
                 <div>
-                    <h1 class="text-lg font-extrabold text-imade-dark leading-tight tracking-tight">RutasApp</h1>
+                    <h1 class="text-lg font-extrabold text-imade-dark dark:text-white leading-tight tracking-tight">RutasApp</h1>
                     <p class="text-[11px] text-imade-light font-bold uppercase tracking-wider">Grupo Imade</p>
                 </div>
             </div>
-            <button id="btn-sync" onclick="syncData()" class="w-10 h-10 rounded-full bg-gray-50 text-imade-dark hover:bg-imade-light hover:text-white flex items-center justify-center transition-all shadow-sm active:scale-90" title="Sincronizar Datos">
-                <i class="fa-solid fa-rotate"></i>
-            </button>
+            
+            <div class="flex items-center gap-2">
+                <!-- Botón Dark Mode -->
+                <button onclick="toggleTheme()" class="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-700 text-imade-dark dark:text-gray-300 hover:bg-imade-light hover:text-white flex items-center justify-center transition-all shadow-sm active:scale-90" title="Modo Oscuro">
+                    <i id="theme-icon-moon" class="fa-solid fa-moon dark:hidden"></i>
+                    <i id="theme-icon-sun" class="fa-solid fa-sun hidden dark:block text-yellow-400"></i>
+                </button>
+                <!-- Botón Sync (Ahora con Badge para Offline) -->
+                <button id="btn-sync" onclick="syncData()" class="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-700 text-imade-dark dark:text-gray-300 hover:bg-imade-light hover:text-white flex items-center justify-center transition-all shadow-sm active:scale-90 relative" title="Sincronizar Datos">
+                    <i class="fa-solid fa-rotate"></i>
+                    <span id="sync-badge" class="absolute -top-1 -right-1 bg-orange-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center hidden">!</span>
+                </button>
+            </div>
         </header>
 
         <!-- CONTENEDOR DE PANTALLAS -->
@@ -420,17 +449,17 @@
             <div id="screen-home" class="screen w-full h-full flex flex-col px-5 py-3 overflow-hidden">
                 
                 <div class="flex flex-col items-center justify-center mt-1 mb-3">
-                    <img src="logo.png" alt="Grupo Imade" class="h-16 object-contain mb-3 filter drop-shadow-sm">
-                    <h2 class="text-2xl font-black text-imade-dark text-center tracking-tight">¡Bienvenido!</h2>
+                    <img src="logo.png" alt="Grupo Imade" class="h-16 object-contain mb-3 filter drop-shadow-sm dark:brightness-0 dark:invert transition-all">
+                    <h2 class="text-2xl font-black text-imade-dark dark:text-white text-center tracking-tight">¡Bienvenido!</h2>
                 </div>
                 
                 <!-- Tarjetas de Acción Rápida -->
                 <div class="grid grid-cols-2 gap-3 mb-3">
-                    <div onclick="switchTab('search')" class="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform hover:shadow-md">
-                        <div class="w-10 h-10 bg-blue-50 text-imade-light rounded-2xl flex items-center justify-center mb-2">
+                    <div onclick="switchTab('search')" class="bg-white dark:bg-gray-800 p-4 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform hover:shadow-md">
+                        <div class="w-10 h-10 bg-blue-50 dark:bg-gray-700 text-imade-light rounded-2xl flex items-center justify-center mb-2">
                             <i class="fa-solid fa-users text-lg"></i>
                         </div>
-                        <h3 class="font-bold text-gray-800 text-sm">Buscar<br><span class="text-gray-500 font-medium text-[11px]">Cliente</span></h3>
+                        <h3 class="font-bold text-gray-800 dark:text-gray-200 text-sm">Buscar<br><span class="text-gray-500 dark:text-gray-400 font-medium text-[11px]">Cliente</span></h3>
                     </div>
                     
                     <div onclick="switchTab('register')" class="bg-gradient-to-br from-imade-dark to-blue-900 p-4 rounded-3xl shadow-md flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform relative overflow-hidden">
@@ -445,23 +474,23 @@
                 <!-- Estados Divididos: GPS y Piloto -->
                 <div class="grid grid-cols-2 gap-3 mb-4">
                     <!-- Satelital -->
-                    <div class="bg-white rounded-3xl p-3 shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center gap-1.5 transition-colors">
-                        <div id="home-gps-icon" class="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 transition-colors">
+                    <div class="bg-white dark:bg-gray-800 rounded-3xl p-3 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col justify-center items-center text-center gap-1.5 transition-colors">
+                        <div id="home-gps-icon" class="w-8 h-8 rounded-xl bg-gray-50 dark:bg-gray-700 flex items-center justify-center text-gray-400 transition-colors">
                             <i class="fa-solid fa-satellite-dish text-sm animate-pulse"></i>
                         </div>
                         <div>
-                            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Satelital</p>
-                            <p id="home-gps-status" class="text-[11px] font-bold text-gray-600 leading-tight">Buscando...</p>
+                            <p class="text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider mb-0.5">Satelital</p>
+                            <p id="home-gps-status" class="text-[11px] font-bold text-gray-600 dark:text-gray-300 leading-tight">Buscando...</p>
                         </div>
                     </div>
                     <!-- Piloto -->
-                    <div class="bg-white rounded-3xl p-3 shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center gap-1.5 transition-colors">
-                        <div id="home-pilot-icon" class="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 transition-colors">
+                    <div class="bg-white dark:bg-gray-800 rounded-3xl p-3 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col justify-center items-center text-center gap-1.5 transition-colors">
+                        <div id="home-pilot-icon" class="w-8 h-8 rounded-xl bg-gray-50 dark:bg-gray-700 flex items-center justify-center text-gray-400 transition-colors">
                             <i class="fa-solid fa-user-astronaut text-sm"></i>
                         </div>
                         <div>
-                            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Tu Estado</p>
-                            <p id="home-pilot-status" class="text-[11px] font-bold text-gray-600 leading-tight">Inactivo</p>
+                            <p class="text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider mb-0.5">Tu Estado</p>
+                            <p id="home-pilot-status" class="text-[11px] font-bold text-gray-600 dark:text-gray-300 leading-tight">Inactivo</p>
                         </div>
                     </div>
                 </div>
@@ -474,29 +503,29 @@
 
                 <!-- Footer IT -->
                 <div class="mt-auto pt-4 text-center pb-2">
-                    <div class="inline-flex items-center justify-center space-x-2 text-[10px] text-gray-400 font-medium bg-white border border-gray-100/50 px-3 py-1.5 rounded-full shadow-sm mb-1.5">
+                    <div class="inline-flex items-center justify-center space-x-2 text-[10px] text-gray-400 dark:text-gray-400 font-medium bg-white dark:bg-gray-800 border border-gray-100/50 dark:border-gray-700 px-3 py-1.5 rounded-full shadow-sm mb-1.5 transition-colors">
                         <i class="fa-solid fa-laptop-code text-imade-light"></i>
                         <span>Creado por <strong>Depto. de IT</strong></span>
                     </div>
-                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest" id="app-version-text">Versión 1.6</p>
+                    <p class="text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest" id="app-version-text">Versión 1.7</p>
                 </div>
             </div>
 
             <!-- PANTALLA 2: BUSCAR -->
-            <div id="screen-search" class="screen hidden w-full h-full flex flex-col bg-imade-bg">
-                <div class="p-5 bg-white/95 backdrop-blur-md shadow-sm shrink-0 z-10 relative border-b border-gray-100">
-                    <h2 class="text-2xl font-black text-imade-dark mb-4 tracking-tight">Directorio</h2>
+            <div id="screen-search" class="screen hidden w-full h-full flex flex-col bg-imade-bg dark:bg-gray-900 transition-colors">
+                <div class="p-5 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-sm shrink-0 z-10 relative border-b border-gray-100 dark:border-gray-700 transition-colors">
+                    <h2 class="text-2xl font-black text-imade-dark dark:text-white mb-4 tracking-tight">Directorio</h2>
                     <div class="relative">
                         <i class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg"></i>
-                        <input type="text" id="search-input" onkeyup="filterClients()" placeholder="Buscar nombre o código..." class="w-full pl-11 pr-10 py-3.5 bg-gray-100 rounded-2xl border-transparent focus:bg-white focus:border-imade-light focus:ring-2 focus:ring-blue-100 outline-none transition-all text-sm font-semibold shadow-inner">
-                        <button id="clear-search-btn" onclick="clearSearch()" class="absolute right-3 top-1/2 transform -translate-y-1/2 w-8 h-8 text-gray-400 hover:text-gray-600 flex items-center justify-center hidden opacity-0 transition-opacity">
+                        <input type="text" id="search-input" onkeyup="filterClients()" placeholder="Buscar nombre o código..." class="w-full pl-11 pr-10 py-3.5 bg-gray-100 dark:bg-gray-700 rounded-2xl border-transparent focus:bg-white dark:focus:bg-gray-600 focus:border-imade-light dark:focus:border-imade-light focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 outline-none transition-all text-sm font-semibold shadow-inner dark:text-white">
+                        <button id="clear-search-btn" onclick="clearSearch()" class="absolute right-3 top-1/2 transform -translate-y-1/2 w-8 h-8 text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-100 flex items-center justify-center hidden opacity-0 transition-opacity">
                             <i class="fa-solid fa-circle-xmark text-lg"></i>
                         </button>
                     </div>
                     <div class="flex justify-between items-center mt-4 px-1">
-                        <p class="text-xs text-gray-500 font-semibold" id="clients-count">Cargando...</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 font-semibold" id="clients-count">Cargando...</p>
                         <div class="relative">
-                            <select id="sort-select" onchange="changeSort(this.value)" class="select-custom text-[11px] font-bold text-imade-dark bg-gray-50 border border-gray-200 rounded-xl pl-3 pr-7 py-2 outline-none cursor-pointer">
+                            <select id="sort-select" onchange="changeSort(this.value)" class="select-custom text-[11px] font-bold text-imade-dark dark:text-gray-200 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl pl-3 pr-7 py-2 outline-none cursor-pointer transition-colors">
                                 <option value="distance">📍 Cercanos</option>
                                 <option value="name">🔤 A - Z</option>
                                 <option value="code">#️⃣ Código</option>
@@ -508,12 +537,12 @@
             </div>
 
             <!-- PANTALLA 3: MAPA DE RUTA (CON FICHA DESPLEGABLE) -->
-            <div id="screen-map" class="screen hidden absolute inset-0 flex flex-col z-[100] bg-gray-200">
+            <div id="screen-map" class="screen hidden absolute inset-0 flex flex-col z-[100] bg-gray-200 dark:bg-gray-900 transition-colors">
                 <div class="absolute top-6 left-4 right-4 z-[400] flex justify-between items-center pointer-events-none">
-                    <button onclick="closeMap()" class="bg-white/90 backdrop-blur-xl w-12 h-12 rounded-full shadow-lg text-imade-dark hover:bg-gray-50 flex items-center justify-center transition-transform active:scale-90 pointer-events-auto border border-white/50">
+                    <button onclick="closeMap()" class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl w-12 h-12 rounded-full shadow-lg text-imade-dark dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-center transition-transform active:scale-90 pointer-events-auto border border-white/50 dark:border-gray-600">
                         <i class="fa-solid fa-arrow-left text-lg"></i>
                     </button>
-                    <button onclick="centerMap()" class="bg-white/90 backdrop-blur-xl w-12 h-12 rounded-full shadow-lg text-imade-light hover:bg-gray-50 flex items-center justify-center transition-transform active:scale-90 pointer-events-auto border border-white/50">
+                    <button onclick="centerMap()" class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl w-12 h-12 rounded-full shadow-lg text-imade-light hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-center transition-transform active:scale-90 pointer-events-auto border border-white/50 dark:border-gray-600">
                         <i class="fa-solid fa-location-crosshairs text-lg"></i>
                     </button>
                 </div>
@@ -521,64 +550,64 @@
                 <div class="flex-1 w-full relative">
                     <!-- Mapa en el fondo -->
                     <div id="map" class="absolute inset-0"></div>
-                    <div id="route-loader" class="absolute inset-0 bg-white/50 backdrop-blur-md z-[400] flex flex-col items-center justify-center hidden">
-                        <div class="w-16 h-16 bg-white rounded-3xl shadow-2xl flex items-center justify-center mb-4 border border-blue-50"><div class="loader"></div></div>
-                        <p class="font-bold text-imade-dark bg-white/90 backdrop-blur-md px-5 py-2 rounded-full text-sm shadow-sm">Calculando ruta óptima...</p>
+                    <div id="route-loader" class="absolute inset-0 bg-white/50 dark:bg-gray-900/50 backdrop-blur-md z-[400] flex flex-col items-center justify-center hidden transition-colors">
+                        <div class="w-16 h-16 bg-white dark:bg-gray-800 rounded-3xl shadow-2xl flex items-center justify-center mb-4 border border-blue-50 dark:border-gray-700"><div class="loader"></div></div>
+                        <p class="font-bold text-imade-dark dark:text-white bg-white/90 dark:bg-gray-800/90 backdrop-blur-md px-5 py-2 rounded-full text-sm shadow-sm transition-colors">Calculando ruta óptima...</p>
                     </div>
                 </div>
                 
                 <!-- BOTTOM SHEET DESPLEGABLE -->
-                <div id="bottom-sheet" class="glass-panel p-5 rounded-t-[32px] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] absolute bottom-0 left-0 w-full z-[500] transition-transform duration-300 ease-out translate-y-[calc(100%-160px)] flex flex-col h-[65dvh]">
+                <div id="bottom-sheet" class="glass-panel p-5 rounded-t-[32px] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] dark:shadow-black/50 absolute bottom-0 left-0 w-full z-[500] transition-transform duration-300 ease-out translate-y-[calc(100%-160px)] flex flex-col h-[65dvh]">
                     
                     <!-- Drag Handle Area -->
                     <div id="drag-handle" class="w-full h-10 absolute top-0 left-0 flex justify-center items-start pt-3 cursor-grab z-10" onclick="window.toggleSheet()">
-                        <div class="w-12 h-1.5 bg-gray-400/50 rounded-full"></div>
+                        <div class="w-12 h-1.5 bg-gray-400/50 dark:bg-gray-500/50 rounded-full"></div>
                     </div>
                     
                     <!-- Cabecera siempre visible -->
                     <div class="mt-5 mb-3 px-1 flex-shrink-0" onclick="window.toggleSheet()">
                         <div class="flex justify-between items-start mb-1">
-                            <h3 id="map-client-name" class="text-xl font-black text-gray-900 leading-tight pr-4 tracking-tight">Nombre Cliente</h3>
-                            <span id="map-client-distance" class="bg-blue-50 text-imade-light text-xs font-bold px-3 py-1.5 rounded-xl whitespace-nowrap border border-blue-100 shadow-sm hidden">-- km</span>
+                            <h3 id="map-client-name" class="text-xl font-black text-gray-900 dark:text-white leading-tight pr-4 tracking-tight">Nombre Cliente</h3>
+                            <span id="map-client-distance" class="bg-blue-50 dark:bg-gray-700 text-imade-light dark:text-blue-300 text-xs font-bold px-3 py-1.5 rounded-xl whitespace-nowrap border border-blue-100 dark:border-gray-600 shadow-sm hidden transition-colors">-- km</span>
                         </div>
                     </div>
                     
                     <!-- Botones siempre visibles -->
                     <div class="grid grid-cols-2 gap-3 mb-4 px-1 flex-shrink-0">
                         <button onclick="openWaze()" class="bg-[#33ccff] text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-[#33ccff]/40 hover:bg-[#00bfff] flex justify-center items-center transition-transform active:scale-95"><i class="fa-brands fa-waze text-xl mr-2"></i> Waze</button>
-                        <button onclick="openGoogleMaps()" class="bg-gray-100 text-gray-800 font-bold py-3 px-4 rounded-xl shadow-sm hover:bg-gray-200 flex justify-center items-center transition-transform active:scale-95 border border-gray-200"><i class="fa-solid fa-map-location-dot text-lg mr-2 text-[#34a853]"></i> Maps</button>
+                        <button onclick="openGoogleMaps()" class="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white font-bold py-3 px-4 rounded-xl shadow-sm hover:bg-gray-200 dark:hover:bg-gray-600 flex justify-center items-center transition-transform active:scale-95 border border-gray-200 dark:border-gray-600"><i class="fa-solid fa-map-location-dot text-lg mr-2 text-[#34a853]"></i> Maps</button>
                     </div>
 
                     <!-- Detalles (Visibles al desplegar) -->
-                    <div id="sheet-details" class="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-gray-200/60 flex-1 overflow-y-auto opacity-0 transition-opacity duration-300 no-scrollbar">
+                    <div id="sheet-details" class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm p-4 rounded-2xl border border-gray-200/60 dark:border-gray-700/60 flex-1 overflow-y-auto opacity-0 transition-opacity duration-300 no-scrollbar">
                         <div class="space-y-3 w-full">
                             <div class="flex items-center">
-                                <span class="font-bold text-gray-400 text-[10px] uppercase tracking-wider w-20 shrink-0">Código:</span>
-                                <span class="font-black text-imade-dark bg-blue-50 px-2 py-0.5 rounded shadow-sm border border-blue-100 text-[12px]" id="map-client-code"># --</span>
+                                <span class="font-bold text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-wider w-20 shrink-0">Código:</span>
+                                <span class="font-black text-imade-dark dark:text-white bg-blue-50 dark:bg-gray-700 px-2 py-0.5 rounded shadow-sm border border-blue-100 dark:border-gray-600 text-[12px] transition-colors" id="map-client-code"># --</span>
                             </div>
                             <div class="flex items-start">
-                                <span class="font-bold text-gray-400 text-[10px] uppercase tracking-wider w-20 shrink-0 mt-0.5">Dirección:</span>
-                                <span class="text-gray-700 text-sm font-medium leading-tight" id="map-client-address-text">--</span>
+                                <span class="font-bold text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-wider w-20 shrink-0 mt-0.5">Dirección:</span>
+                                <span class="text-gray-700 dark:text-gray-200 text-sm font-medium leading-tight" id="map-client-address-text">--</span>
                             </div>
                             <div class="flex items-start">
-                                <span class="font-bold text-gray-400 text-[10px] uppercase tracking-wider w-20 shrink-0 mt-0.5">Municipio:</span>
-                                <span class="text-gray-700 text-sm font-medium leading-tight" id="map-client-muni">--</span>
+                                <span class="font-bold text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-wider w-20 shrink-0 mt-0.5">Municipio:</span>
+                                <span class="text-gray-700 dark:text-gray-200 text-sm font-medium leading-tight" id="map-client-muni">--</span>
                             </div>
                             <div class="flex items-start">
-                                <span class="font-bold text-gray-400 text-[10px] uppercase tracking-wider w-20 shrink-0 mt-0.5">Depto:</span>
-                                <span class="text-gray-700 text-sm font-medium leading-tight" id="map-client-depto">--</span>
+                                <span class="font-bold text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-wider w-20 shrink-0 mt-0.5">Depto:</span>
+                                <span class="text-gray-700 dark:text-gray-200 text-sm font-medium leading-tight" id="map-client-depto">--</span>
                             </div>
                             
-                            <div class="flex items-center pt-3 border-t border-gray-200 mt-2 hidden" id="map-client-phone-container">
-                                <span class="font-bold text-gray-400 text-[10px] uppercase tracking-wider w-20 shrink-0">Teléfono:</span>
+                            <div class="flex items-center pt-3 border-t border-gray-200 dark:border-gray-700 mt-2 hidden transition-colors" id="map-client-phone-container">
+                                <span class="font-bold text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-wider w-20 shrink-0">Teléfono:</span>
                                 <i class="fa-solid fa-phone mr-1.5 text-green-500 text-xs"></i>
-                                <a href="#" id="map-client-phone-link" class="text-blue-600 underline underline-offset-2 font-bold tracking-wide text-sm">--</a>
+                                <a href="#" id="map-client-phone-link" class="text-blue-600 dark:text-blue-400 underline underline-offset-2 font-bold tracking-wide text-sm">--</a>
                             </div>
                             
                             <div class="flex items-center pt-2 mt-1">
-                                <span class="font-bold text-gray-400 text-[10px] uppercase tracking-wider w-20 shrink-0">GPS:</span>
+                                <span class="font-bold text-gray-400 dark:text-gray-500 text-[10px] uppercase tracking-wider w-20 shrink-0">GPS:</span>
                                 <i class="fa-solid fa-map-pin mr-1.5 text-gray-400 text-xs"></i>
-                                <span class="text-gray-500 text-[10px] font-medium opacity-80" id="map-client-coords">Lat: 0, Lng: 0</span>
+                                <span class="text-gray-500 dark:text-gray-400 text-[10px] font-medium opacity-80" id="map-client-coords">Lat: 0, Lng: 0</span>
                             </div>
                         </div>
                     </div>
@@ -586,29 +615,29 @@
             </div>
 
             <!-- PANTALLA 4: REGISTRAR CLIENTE -->
-            <div id="screen-register" class="screen hidden w-full h-full flex flex-col bg-imade-bg">
-                <div class="p-5 bg-white shadow-sm shrink-0 border-b border-gray-100">
-                    <h2 class="text-2xl font-black text-imade-dark tracking-tight">Registrar</h2>
-                    <p class="text-xs text-gray-500 mt-1 font-medium">Ubicación y hora se guardan solos</p>
+            <div id="screen-register" class="screen hidden w-full h-full flex flex-col bg-imade-bg dark:bg-gray-900 transition-colors">
+                <div class="p-5 bg-white dark:bg-gray-800 shadow-sm shrink-0 border-b border-gray-100 dark:border-gray-700 transition-colors">
+                    <h2 class="text-2xl font-black text-imade-dark dark:text-white tracking-tight">Registrar</h2>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">Ubicación y hora se guardan solos. Soporta guardado sin conexión 📶</p>
                 </div>
                 <div class="flex-1 overflow-y-auto p-5 no-scrollbar pb-6">
-                    <form id="register-form" onsubmit="saveClient(event)" class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 space-y-6">
-                        <div id="location-status" class="p-4 bg-gray-50 rounded-2xl flex items-center border border-gray-200 transition-colors">
+                    <form id="register-form" onsubmit="saveClient(event)" class="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 space-y-6 transition-colors">
+                        <div id="location-status" class="p-4 bg-gray-50 dark:bg-gray-700 rounded-2xl flex items-center border border-gray-200 dark:border-gray-600 transition-colors">
                             <div class="mr-3 text-gray-400"><i class="fa-solid fa-location-crosshairs animate-pulse text-xl"></i></div>
                             <div>
-                                <h4 class="text-sm font-bold text-gray-700">Esperando señal GPS</h4>
+                                <h4 class="text-sm font-bold text-gray-700 dark:text-gray-200">Esperando señal GPS</h4>
                                 <p class="text-xs text-gray-500 font-medium">Buscando...</p>
                             </div>
                         </div>
                         <div class="space-y-4">
-                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Piloto (Automático)</label><input type="text" id="reg-pilot" disabled class="w-full px-4 py-4 bg-gray-100 rounded-2xl border border-transparent text-sm font-bold text-gray-500 shadow-inner"></div>
-                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Nombre de Cliente</label><input type="text" id="reg-name" required placeholder="Ej. Distribuidora Central" class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800"></div>
-                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Código de Cliente</label><input type="text" id="reg-code" required placeholder="Ej. 1234" class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800"></div>
-                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Teléfono</label><input type="tel" id="reg-phone" required placeholder="Ej. 5555-5555" class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800"></div>
-                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Departamento</label><input type="text" id="reg-depto" required placeholder="Ej. Guatemala" class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800"></div>
-                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Municipio</label><input type="text" id="reg-muni" required placeholder="Ej. Mixco" class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800"></div>
-                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Dirección Exacta</label><textarea id="reg-address" required rows="2" placeholder="Ej. 4ta Calle 2-33 Zona 1..." class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm resize-none font-bold text-gray-800"></textarea></div>
-                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">País</label><input type="text" id="reg-pais" value="Guatemala" required class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800 shadow-inner"></div>
+                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Piloto (Automático)</label><input type="text" id="reg-pilot" disabled class="w-full px-4 py-4 bg-gray-100 dark:bg-gray-900 rounded-2xl border border-transparent text-sm font-bold text-gray-500 dark:text-gray-400 shadow-inner transition-colors"></div>
+                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Nombre de Cliente</label><input type="text" id="reg-name" required placeholder="Ej. Distribuidora Central" class="w-full px-4 py-4 bg-gray-50 dark:bg-gray-700 rounded-2xl border border-transparent dark:text-white focus:bg-white dark:focus:bg-gray-600 focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold"></div>
+                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Código de Cliente</label><input type="text" id="reg-code" required placeholder="Ej. 1234" class="w-full px-4 py-4 bg-gray-50 dark:bg-gray-700 rounded-2xl border border-transparent dark:text-white focus:bg-white dark:focus:bg-gray-600 focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold"></div>
+                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Teléfono</label><input type="tel" id="reg-phone" required placeholder="Ej. 5555-5555" class="w-full px-4 py-4 bg-gray-50 dark:bg-gray-700 rounded-2xl border border-transparent dark:text-white focus:bg-white dark:focus:bg-gray-600 focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold"></div>
+                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Departamento</label><input type="text" id="reg-depto" required placeholder="Ej. Guatemala" class="w-full px-4 py-4 bg-gray-50 dark:bg-gray-700 rounded-2xl border border-transparent dark:text-white focus:bg-white dark:focus:bg-gray-600 focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold"></div>
+                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Municipio</label><input type="text" id="reg-muni" required placeholder="Ej. Mixco" class="w-full px-4 py-4 bg-gray-50 dark:bg-gray-700 rounded-2xl border border-transparent dark:text-white focus:bg-white dark:focus:bg-gray-600 focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold"></div>
+                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Dirección Exacta</label><textarea id="reg-address" required rows="2" placeholder="Ej. 4ta Calle 2-33 Zona 1..." class="w-full px-4 py-4 bg-gray-50 dark:bg-gray-700 rounded-2xl border border-transparent dark:text-white focus:bg-white dark:focus:bg-gray-600 focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm resize-none font-bold"></textarea></div>
+                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">País</label><input type="text" id="reg-pais" value="Guatemala" required class="w-full px-4 py-4 bg-gray-50 dark:bg-gray-700 rounded-2xl border border-transparent dark:text-white focus:bg-white dark:focus:bg-gray-600 focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold shadow-inner"></div>
                         </div>
                         <div class="pt-2"><button type="submit" id="btn-save" class="w-full bg-imade-dark text-white font-black py-4 rounded-2xl shadow-xl shadow-imade-dark/30 hover:bg-blue-900 transition-all active:scale-95 disabled:opacity-50 flex justify-center items-center"><i class="fa-solid fa-cloud-arrow-up mr-2 text-lg"></i> Guardar Cliente</button></div>
                     </form>
@@ -616,20 +645,20 @@
             </div>
 
             <!-- PANTALLA 5: MAPA DE PILOTOS EN VIVO -->
-            <div id="screen-pilots" class="screen hidden absolute inset-0 flex flex-col z-[90] bg-gray-200">
-                <div class="p-5 bg-white/95 backdrop-blur-md shadow-sm shrink-0 z-10 relative border-b border-gray-100 flex justify-between items-center">
+            <div id="screen-pilots" class="screen hidden absolute inset-0 flex flex-col z-[90] bg-gray-200 dark:bg-gray-900 transition-colors">
+                <div class="p-5 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-sm shrink-0 z-10 relative border-b border-gray-100 dark:border-gray-700 flex justify-between items-center transition-colors">
                     <div>
-                        <h2 class="text-2xl font-black text-imade-dark tracking-tight">Flota en Vivo</h2>
-                        <p class="text-xs text-gray-500 font-medium">Monitoreo satelital simultáneo</p>
+                        <h2 class="text-2xl font-black text-imade-dark dark:text-white tracking-tight">Flota en Vivo</h2>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Monitoreo satelital simultáneo</p>
                     </div>
-                    <div class="w-10 h-10 bg-blue-50 text-imade-light rounded-full flex items-center justify-center shadow-inner relative">
+                    <div class="w-10 h-10 bg-blue-50 dark:bg-gray-700 text-imade-light rounded-full flex items-center justify-center shadow-inner relative">
                         <div class="absolute inset-0 border-2 border-imade-light rounded-full animate-ping opacity-50"></div>
                         <i class="fa-solid fa-satellite text-lg"></i>
                     </div>
                 </div>
                 <div class="flex-1 w-full relative">
-                    <div id="map-pilots" class="absolute inset-0 bg-gray-100"></div>
-                    <button onclick="window.centerPilotsMap()" class="absolute bottom-6 right-4 z-[400] bg-white/90 backdrop-blur-xl w-14 h-14 rounded-full shadow-lg text-imade-dark hover:bg-gray-50 flex items-center justify-center transition-transform active:scale-90 border border-white/50">
+                    <div id="map-pilots" class="absolute inset-0 bg-gray-100 dark:bg-gray-900"></div>
+                    <button onclick="window.centerPilotsMap()" class="absolute bottom-6 right-4 z-[400] bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl w-14 h-14 rounded-full shadow-lg text-imade-dark dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-center transition-transform active:scale-90 border border-white/50 dark:border-gray-600">
                         <i class="fa-solid fa-location-crosshairs text-xl"></i>
                     </button>
                 </div>
@@ -638,24 +667,24 @@
         </div> 
 
         <!-- BOTTOM NAVIGATION BAR -->
-        <nav id="bottom-nav" class="bg-white/90 backdrop-blur-xl border-t border-gray-100 flex justify-around items-center pb-safe z-50 shrink-0 relative px-2">
-            <button onclick="switchTab('home')" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 text-imade-dark relative transition-colors">
+        <nav id="bottom-nav" class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-t border-gray-100 dark:border-gray-700 flex justify-around items-center pb-safe z-50 shrink-0 relative px-2 transition-colors duration-300">
+            <button onclick="switchTab('home')" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 text-imade-dark dark:text-white relative transition-colors">
                 <i class="fa-solid fa-house text-xl mb-0.5"></i>
                 <span class="text-[10px] font-extrabold uppercase">Inicio</span>
             </button>
-            <button onclick="switchTab('search')" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 text-gray-400 hover:text-imade-dark transition-colors relative">
+            <button onclick="switchTab('search')" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 text-gray-400 dark:text-gray-500 hover:text-imade-dark dark:hover:text-white transition-colors relative">
                 <i class="fa-solid fa-magnifying-glass text-xl mb-0.5"></i>
                 <span class="text-[10px] font-extrabold uppercase">Buscar</span>
             </button>
-            <button onclick="switchTab('register')" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 text-gray-400 hover:text-imade-dark transition-colors relative">
+            <button onclick="switchTab('register')" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 text-gray-400 dark:text-gray-500 hover:text-imade-dark dark:hover:text-white transition-colors relative">
                 <i class="fa-solid fa-location-dot text-xl mb-0.5"></i>
                 <span class="text-[10px] font-extrabold uppercase">Registrar</span>
             </button>
-            <button onclick="switchTab('pilots')" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 text-gray-400 hover:text-imade-dark transition-colors relative">
+            <button onclick="switchTab('pilots')" class="nav-btn flex-1 py-3 flex flex-col items-center gap-1 text-gray-400 dark:text-gray-500 hover:text-imade-dark dark:hover:text-white transition-colors relative">
                 <i class="fa-solid fa-truck-fast text-xl mb-0.5 relative">
                     <span class="absolute -top-1 -right-2 flex h-3 w-3">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-imade-light opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-3 w-3 bg-imade-light border border-white"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 bg-imade-light border border-white dark:border-gray-800"></span>
                     </span>
                 </i>
                 <span class="text-[10px] font-extrabold uppercase text-imade-light">Flota</span>
@@ -664,13 +693,13 @@
 
         <!-- Identidad del Piloto Modal -->
         <div id="name-modal" class="fixed inset-0 bg-black/60 z-[3000] hidden flex items-center justify-center backdrop-blur-md px-4 transition-opacity">
-            <div class="bg-white p-7 rounded-[32px] w-full max-w-sm text-center shadow-2xl modal-fade">
-                <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-sm">
+            <div class="bg-white dark:bg-gray-800 p-7 rounded-[32px] w-full max-w-sm text-center shadow-2xl modal-fade dark:border dark:border-gray-700">
+                <div class="w-20 h-20 bg-blue-50 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white dark:border-gray-800 shadow-sm">
                     <i class="fa-solid fa-id-badge text-4xl text-imade-light"></i>
                 </div>
-                <h3 class="text-xl font-black text-gray-900 mb-1 tracking-tight">Identificación</h3>
-                <p class="text-gray-500 text-sm mb-5 font-medium">Ingresa tu nombre para aparecer en el radar de la flota en tiempo real.</p>
-                <input type="text" id="pilot-name-input" placeholder="Ej. Juan Pérez" class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-gray-200 focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800 text-center mb-4">
+                <h3 class="text-xl font-black text-gray-900 dark:text-white mb-1 tracking-tight">Identificación</h3>
+                <p class="text-gray-500 dark:text-gray-400 text-sm mb-5 font-medium">Ingresa tu nombre para aparecer en el radar de la flota en tiempo real.</p>
+                <input type="text" id="pilot-name-input" placeholder="Ej. Juan Pérez" class="w-full px-4 py-4 bg-gray-50 dark:bg-gray-700 rounded-2xl border border-gray-200 dark:border-gray-600 focus:bg-white dark:focus:bg-gray-600 focus:border-imade-light outline-none transition-all text-sm font-bold text-gray-800 dark:text-white text-center mb-4">
                 <button onclick="savePilotName()" class="w-full bg-imade-dark text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-transform">
                     Comenzar Turno
                 </button>
@@ -679,25 +708,25 @@
 
         <!-- iOS Style Toast -->
         <div id="toast" class="absolute top-4 left-4 right-4 sm:left-1/2 sm:w-96 sm:-translate-x-1/2 ios-toast rounded-[24px] p-4 flex items-center gap-3 transition-all duration-400 opacity-0 -translate-y-[150%] pointer-events-none z-[9999]">
-            <div id="toast-icon" class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shrink-0 border border-gray-200">
+            <div id="toast-icon" class="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center shrink-0 border border-gray-200 dark:border-gray-700 transition-colors">
                 <i class="fa-solid fa-bell text-imade-light text-lg"></i>
             </div>
             <div class="flex-1">
-                <h4 id="toast-title" class="text-sm font-extrabold text-gray-900 leading-tight">RutasApp</h4>
-                <p id="toast-msg" class="text-[13px] text-gray-600 mt-0.5 font-medium leading-snug">Mensaje</p>
+                <h4 id="toast-title" class="text-sm font-extrabold text-gray-900 dark:text-white leading-tight transition-colors">RutasApp</h4>
+                <p id="toast-msg" class="text-[13px] text-gray-600 dark:text-gray-300 mt-0.5 font-medium leading-snug transition-colors">Mensaje</p>
             </div>
         </div>
 
         <!-- Pop-up GPS Alert -->
         <div id="gps-modal" class="fixed inset-0 bg-black/60 z-[2000] hidden flex items-center justify-center backdrop-blur-sm px-4 transition-opacity">
-            <div class="bg-white p-7 rounded-[32px] w-full max-w-sm text-center shadow-2xl modal-fade">
-                <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-5 border-4 border-white shadow-sm relative">
+            <div class="bg-white dark:bg-gray-800 p-7 rounded-[32px] w-full max-w-sm text-center shadow-2xl modal-fade dark:border dark:border-gray-700">
+                <div class="w-20 h-20 bg-red-50 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-5 border-4 border-white dark:border-gray-800 shadow-sm relative">
                     <i class="fa-solid fa-location-crosshairs text-3xl text-red-500"></i>
-                    <div class="absolute -right-1 -bottom-1 bg-white rounded-full p-1"><div class="bg-red-500 rounded-full w-5 h-5 flex items-center justify-center"><i class="fa-solid fa-xmark text-white text-xs font-bold"></i></div></div>
+                    <div class="absolute -right-1 -bottom-1 bg-white dark:bg-gray-800 rounded-full p-1"><div class="bg-red-500 rounded-full w-5 h-5 flex items-center justify-center"><i class="fa-solid fa-xmark text-white text-xs font-bold"></i></div></div>
                 </div>
-                <h3 class="text-xl font-black text-gray-900 mb-2 tracking-tight">Ubicación Apagada</h3>
-                <p class="text-gray-500 text-sm mb-6 leading-relaxed font-medium">Para que la app funcione, necesitas <strong>encender tu GPS</strong> y otorgar permisos.</p>
-                <button onclick="closeGpsModal()" class="w-full bg-gray-900 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-transform">Entendido</button>
+                <h3 class="text-xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">Ubicación Apagada</h3>
+                <p class="text-gray-500 dark:text-gray-400 text-sm mb-6 leading-relaxed font-medium">Para que la app funcione, necesitas <strong>encender tu GPS</strong> y otorgar permisos.</p>
+                <button onclick="closeGpsModal()" class="w-full bg-gray-900 dark:bg-gray-700 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-transform">Entendido</button>
             </div>
         </div>
 
@@ -707,92 +736,6 @@
     <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
     <script>
-        // PWA setup y bypass de instalación
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-        let deferredPrompt;
-        const btnInstall = document.getElementById('btn-install');
-        const installInstructions = document.getElementById('install-instructions');
-        const appleInstructions = document.getElementById('apple-instructions');
-        const androidInstructions = document.getElementById('android-instructions');
-        const btnBypass = document.getElementById('btn-bypass');
-
-        if (!isStandalone) {
-            document.getElementById('app').classList.add('hidden');
-            document.getElementById('install-screen').classList.remove('hidden');
-
-            window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
-                deferredPrompt = e;
-                btnInstall.classList.remove('hidden');
-            });
-
-            btnInstall.addEventListener('click', async () => {
-                if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    const { outcome } = await deferredPrompt.userChoice;
-                    if (outcome === 'accepted') {
-                        btnInstall.classList.add('hidden');
-                        installInstructions.classList.add('hidden');
-                        document.getElementById('installed-msg').classList.remove('hidden');
-                        btnBypass.classList.add('hidden');
-                    }
-                    deferredPrompt = null;
-                } else {
-                    // Si el navegador bloqueó el prompt nativo
-                    btnInstall.classList.add('hidden');
-                    installInstructions.classList.remove('hidden');
-                    
-                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                    if (isIOS) {
-                        appleInstructions.classList.remove('hidden');
-                        androidInstructions.classList.add('hidden');
-                    } else {
-                        appleInstructions.classList.add('hidden');
-                        androidInstructions.classList.remove('hidden');
-                    }
-                }
-            });
-
-            btnBypass.addEventListener('click', () => {
-                document.getElementById('install-screen').classList.add('hidden');
-                document.getElementById('app').classList.remove('hidden');
-                if(map) map.invalidateSize();
-                if(pilotsMap) pilotsMap.invalidateSize();
-                checkPermissions(); 
-            });
-
-            window.addEventListener('appinstalled', () => {
-                btnInstall.classList.add('hidden');
-                installInstructions.classList.add('hidden');
-                btnBypass.classList.add('hidden');
-                document.getElementById('installed-msg').classList.remove('hidden');
-            });
-        }
-
-        // SW FIX: Usamos un Service Worker robusto con la inyección por BLOB mejorada
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                try {
-                    const swCode = `
-                        self.addEventListener('install', (e) => { self.skipWaiting(); });
-                        self.addEventListener('activate', (e) => { 
-                            e.waitUntil(caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))));
-                            self.clients.claim(); 
-                        });
-                        self.addEventListener('fetch', (e) => {
-                            if (!e.request.url.startsWith('http')) return;
-                            e.respondWith(fetch(e.request, {cache: "no-store"}).catch(() => caches.match(e.request)));
-                        });
-                    `;
-                    const blob = new Blob([swCode], {type: 'application/javascript'});
-                    const url = URL.createObjectURL(blob);
-                    navigator.serviceWorker.register(url).then(reg => {
-                        console.log("Service Worker Activo y Listo para Notificaciones");
-                    }).catch(err => console.log('SW error', err));
-                } catch(e) { console.warn("SW Setup Error:", e); }
-            });
-        }
-
         const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzbyjPISFC8bYmv1McsPFUjGqual-O2E-p29DyOr2T2L02jsT5fKpAUR_n_dEtO4DXH/exec";
         
         let clients = [];
@@ -809,101 +752,46 @@
         let pilotsMap = null;
         let pilotMarkers = {};
 
-        // === LÓGICA DE PERMISOS OBLIGATORIOS CORREGIDA ===
-        window.requestAllPermissions = function() {
-            if ('Notification' in window) {
-                Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') {
-                        document.getElementById('permissions-modal').classList.add('hidden');
-                        showToast("¡Listo!", "Notificaciones de S.O.S activadas.", "fa-check");
-                        
-                        // Envia notif silenciosa para instanciar en Android OS
-                        if ('serviceWorker' in navigator) {
-                            try {
-                                navigator.serviceWorker.getRegistrations().then(regs => {
-                                    if(regs && regs.length > 0) regs[0].showNotification("RutasApp", {body:"Permisos listos", icon: "https://cdn-icons-png.flaticon.com/512/854/854878.png"}).catch(e => console.warn(e));
-                                }).catch(e => console.warn("SW getRegistrations error:", e));
-                            } catch(e) {}
-                        }
-                    } else {
-                        alert("⚠️ ACCIÓN REQUERIDA: Has denegado las notificaciones. Para tu seguridad y la de la flota, ve a la configuración de tu navegador o celular y ACTIVA las notificaciones para esta app.");
-                        document.getElementById('permissions-modal').classList.add('hidden');
-                    }
-                });
+        // ====== MODO OSCURO (TOGGLE Y BOTÓN) ======
+        function toggleTheme() {
+            const html = document.documentElement;
+            const moonIcon = document.getElementById('theme-icon-moon');
+            const sunIcon = document.getElementById('theme-icon-sun');
+            
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('imade_theme', 'light');
+                if(moonIcon && sunIcon) { moonIcon.classList.remove('hidden'); sunIcon.classList.add('hidden'); }
             } else {
-                alert("Tu dispositivo no soporta notificaciones nativas (Asegurate de estar en la app instalada y no en Safari).");
-                document.getElementById('permissions-modal').classList.add('hidden');
-            }
-            requestLocation();
-        };
-
-        function checkPermissions() {
-            if ('Notification' in window && Notification.permission !== 'granted') {
-                document.getElementById('permissions-modal').classList.remove('hidden');
+                html.classList.add('dark');
+                localStorage.setItem('imade_theme', 'dark');
+                if(moonIcon && sunIcon) { moonIcon.classList.add('hidden'); sunIcon.classList.remove('hidden'); }
             }
         }
+        
+        window.addEventListener('DOMContentLoaded', () => {
+             const html = document.documentElement;
+             const moonIcon = document.getElementById('theme-icon-moon');
+             const sunIcon = document.getElementById('theme-icon-sun');
+             if(moonIcon && sunIcon) {
+                 if (html.classList.contains('dark')) {
+                     moonIcon.classList.add('hidden');
+                     sunIcon.classList.remove('hidden');
+                 } else {
+                     moonIcon.classList.remove('hidden');
+                     sunIcon.classList.add('hidden');
+                 }
+             }
+        });
 
-        let wakeLock = null;
-        window.requestWakeLock = async function() {
-            try {
-                if ('wakeLock' in navigator) {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                }
-            } catch (err) {}
-        }
-
-        // =========================================================================
-        // NUEVA LÓGICA DE ALARMA: VIBRACIÓN CONTINUA Y SONIDO
-        // =========================================================================
-        let sosInterval;
-        let isSosPlaying = false;
-        let audioCtx = null;
-        window.manageSOSAudio = function(anySOS) {
-            if (anySOS && !isSosPlaying) {
-                isSosPlaying = true;
-                if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if(audioCtx.state === 'suspended') audioCtx.resume();
-                
-                sosInterval = setInterval(() => {
-                    try {
-                        // Sonido Web Audio API (Sobrevive más en background en iOS)
-                        const osc = audioCtx.createOscillator();
-                        const gain = audioCtx.createGain();
-                        osc.type = 'square';
-                        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-                        osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.2);
-                        gain.gain.setValueAtTime(0.15, audioCtx.currentTime); 
-                        osc.connect(gain);
-                        gain.connect(audioCtx.destination);
-                        osc.start();
-                        osc.stop(audioCtx.currentTime + 0.4);
-
-                        // VIBRACIÓN CONTINUA DE HARDWARE (Android)
-                        if (navigator.vibrate) {
-                            navigator.vibrate([400, 200]);
-                        }
-                    } catch(e) {}
-                }, 600); // Se repite cada 600ms
-            } else if (!anySOS && isSosPlaying) {
-                isSosPlaying = false;
-                clearInterval(sosInterval);
-                if (navigator.vibrate) navigator.vibrate(0); // Apagar vibración
-            }
-        };
-
-        const mockData = [
-            { codigo: '169', nombre: 'Jersson Ariel Ramirez', telefono: '', direccion: 'Gualán', municipio: 'Gualán', departamento: 'Zacapa', lat: 15.115577, lng: -89.354512 },
-            { codigo: '642', nombre: 'Victoriano Sulugui', telefono: '', direccion: 'Totonicapán', municipio: 'Totonicapán', departamento: 'Totonicapán', lat: 14.826953, lng: -91.218808 },
-            { codigo: '1987', nombre: 'Corporación Cifuentes', telefono: '', direccion: 'San Francisco La Unión', municipio: 'San Francisco La Unión', departamento: 'Quetzaltenango', lat: 14.910562, lng: -91.367340 },
-            { codigo: '1076', nombre: 'Grupo Construferro', telefono: '', direccion: 'San Mateo', municipio: 'San Mateo', departamento: 'Quetzaltenango', lat: 14.864376, lng: -91.567317 }
-        ];
-
+        // ====== INICIALIZACIÓN ======
         window.onload = () => {
             loadClients();
             requestLocation();
             setTimeout(syncData, 1000); 
             setupSearchInput();
             checkPilotIdentity();
+            updateOfflineBadge(); // Refresca el icono de sincronizar
             
             setTimeout(() => {
                 const handle = document.getElementById('drag-handle');
@@ -941,7 +829,6 @@
                 checkPermissions();
                 window.requestWakeLock();
                 
-                // Desbloquea el audio en iOS al interactuar con el botón
                 if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 if(audioCtx.state === 'suspended') audioCtx.resume();
 
@@ -968,14 +855,14 @@
 
             const btns = document.querySelectorAll('.nav-btn');
             btns.forEach(btn => {
-                btn.classList.remove('text-imade-dark');
-                btn.classList.add('text-gray-400');
+                btn.classList.remove('text-imade-dark', 'dark:text-white');
+                btn.classList.add('text-gray-400', 'dark:text-gray-500');
             });
 
             const activeBtn = Array.from(btns).find(btn => btn.getAttribute('onclick').includes(tabId));
             if(activeBtn) {
-                activeBtn.classList.remove('text-gray-400');
-                activeBtn.classList.add('text-imade-dark');
+                activeBtn.classList.remove('text-gray-400', 'dark:text-gray-500');
+                activeBtn.classList.add('text-imade-dark', 'dark:text-white');
             }
 
             if (tabId === 'search') filterClients(); 
@@ -1033,10 +920,10 @@
             return R * c;
         }
 
+        // SOS Lógica...
         let mySosInterval;
         function triggerSOS() {
             if (!window.userLat || !window.userLng) { showToast("Error", "GPS no disponible para S.O.S"); return; }
-            
             if (window.updatePilotLocation) window.updatePilotLocation(window.userLat, window.userLng, 'SOS');
             
             document.getElementById('sos-active-modal').classList.remove('hidden');
@@ -1047,9 +934,7 @@
             mySosInterval = setInterval(() => {
                 timeLeft--;
                 document.getElementById('sos-timer').innerText = timeLeft;
-                if(timeLeft <= 0) {
-                    cancelSOS();
-                }
+                if(timeLeft <= 0) cancelSOS();
             }, 1000);
         }
 
@@ -1087,17 +972,15 @@
                         const homeStatus = document.getElementById('home-gps-status');
                         const homeIcon = document.getElementById('home-gps-icon');
                         if (homeStatus && homeIcon) {
-                            homeStatus.innerHTML = `<span class="text-green-600">Activo</span>`;
-                            homeStatus.className = `text-[11px] font-bold text-gray-800`;
-                            homeIcon.className = `w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors bg-green-50 text-green-500`;
-                            homeIcon.innerHTML = `<i class="fa-solid fa-satellite-dish text-sm"></i>`;
+                            homeStatus.innerHTML = `<span class="text-green-600 dark:text-green-400">Activo</span>`;
+                            homeIcon.className = `w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors bg-green-50 dark:bg-green-900/30 text-green-500`;
                         }
 
                         const pilotStatus = document.getElementById('home-pilot-status');
                         const pilotIcon = document.getElementById('home-pilot-icon');
                         if (pilotStatus && pilotIcon) {
-                            pilotStatus.innerHTML = `<span class="text-green-600">Activo</span>`;
-                            pilotIcon.className = `w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors bg-green-50 text-green-500`;
+                            pilotStatus.innerHTML = `<span class="text-green-600 dark:text-green-400">Activo</span>`;
+                            pilotIcon.className = `w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors bg-green-50 dark:bg-green-900/30 text-green-500`;
                         }
 
                         if(window.updatePilotLocation && document.getElementById('sos-active-modal').classList.contains('hidden')){
@@ -1110,10 +993,10 @@
 
                         const locStatus = document.getElementById('location-status');
                         if (locStatus) {
-                            locStatus.className = `p-4 rounded-2xl flex items-center border transition-colors bg-green-50 border-green-200`;
+                            locStatus.className = `p-4 rounded-2xl flex items-center border transition-colors bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800`;
                             locStatus.innerHTML = `
                                 <div class="mr-3 text-green-500"><i class="fa-solid fa-circle-check text-xl"></i></div>
-                                <div><h4 class="text-sm font-bold text-green-800">Ubicación Lista</h4><p class="text-[11px] font-bold text-green-600 mt-0.5 uppercase tracking-wide">Coordenadas capturadas</p></div>`;
+                                <div><h4 class="text-sm font-bold text-green-800 dark:text-green-400">Ubicación Lista</h4><p class="text-[11px] font-bold text-green-600 dark:text-green-500 mt-0.5 uppercase tracking-wide">Coordenadas capturadas</p></div>`;
                         }
                     },
                     (error) => {
@@ -1122,15 +1005,14 @@
                         const homeIcon = document.getElementById('home-gps-icon');
                         if (homeStatus && homeIcon) {
                             homeStatus.innerHTML = `<span class="text-red-500">Apagado</span>`;
-                            homeIcon.className = "w-8 h-8 rounded-xl bg-red-50 text-red-500 flex items-center justify-center shrink-0";
-                            homeIcon.innerHTML = `<i class="fa-solid fa-location-crosshairs text-sm"></i>`;
+                            homeIcon.className = "w-8 h-8 rounded-xl bg-red-50 dark:bg-red-900/30 text-red-500 flex items-center justify-center shrink-0";
                         }
                         
                         const pilotStatus = document.getElementById('home-pilot-status');
                         const pilotIcon = document.getElementById('home-pilot-icon');
                         if (pilotStatus && pilotIcon) {
                             pilotStatus.innerHTML = `<span class="text-red-500">Inactivo</span>`;
-                            pilotIcon.className = `w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors bg-red-50 text-red-500`;
+                            pilotIcon.className = `w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors bg-red-50 dark:bg-red-900/30 text-red-500`;
                         }
 
                         if(window.updatePilotLocation) window.updatePilotLocation(0, 0, 'inactivo');
@@ -1225,6 +1107,11 @@
             filterClients();
         }
 
+        const mockData = [
+            { codigo: '169', nombre: 'Jersson Ariel Ramirez', telefono: '', direccion: 'Gualán', municipio: 'Gualán', departamento: 'Zacapa', lat: 15.115577, lng: -89.354512 },
+            { codigo: '642', nombre: 'Victoriano Sulugui', telefono: '', direccion: 'Totonicapán', municipio: 'Totonicapán', departamento: 'Totonicapán', lat: 14.826953, lng: -91.218808 }
+        ];
+
         function loadClients() {
             const stored = localStorage.getItem('app_clientes_imade_v3');
             if (stored) clients = JSON.parse(stored);
@@ -1240,7 +1127,7 @@
             const container = document.getElementById('client-list');
             container.innerHTML = '';
             if (list.length === 0) {
-                container.innerHTML = `<div class="flex flex-col items-center justify-center py-16 text-gray-400"><i class="fa-solid fa-folder-open text-5xl mb-4 opacity-40"></i><p class="font-bold text-gray-500">Ningún cliente encontrado</p></div>`;
+                container.innerHTML = `<div class="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500"><i class="fa-solid fa-folder-open text-5xl mb-4 opacity-40"></i><p class="font-bold text-gray-500 dark:text-gray-400">Ningún cliente encontrado</p></div>`;
                 return;
             }
             list.forEach(client => {
@@ -1248,7 +1135,7 @@
                 let distBadge = '';
                 if (client.distancia !== null && client.distancia !== undefined) {
                     let distText = client.distancia < 1 ? `${(client.distancia * 1000).toFixed(0)} m` : `${client.distancia.toFixed(1)} km`;
-                    distBadge = `<span class="text-[10px] font-black text-imade-light bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-lg whitespace-nowrap shadow-sm ml-2">${distText}</span>`;
+                    distBadge = `<span class="text-[10px] font-black text-imade-light bg-blue-50 dark:bg-gray-700 border border-blue-100 dark:border-gray-600 px-2 py-0.5 rounded-lg whitespace-nowrap shadow-sm ml-2 transition-colors">${distText}</span>`;
                 }
                 
                 let subtext = "";
@@ -1257,9 +1144,9 @@
                 if (!subtext) subtext = "Sin dirección";
 
                 const card = document.createElement('div');
-                card.className = "bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4 active:scale-95 transition-transform cursor-pointer hover:border-blue-200";
+                card.className = "bg-white dark:bg-gray-800 p-4 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4 active:scale-95 transition-transform cursor-pointer hover:border-blue-200 dark:hover:border-blue-900";
                 card.onclick = () => selectClientForRoute(client);
-                card.innerHTML = `<div class="w-12 h-12 rounded-2xl bg-gray-50 text-imade-dark flex items-center justify-center font-black text-lg shrink-0 border border-gray-200">${initial}</div><div class="flex-1 min-w-0"><div class="flex justify-between items-start mb-0.5"><h3 class="font-bold text-gray-900 text-[13px] truncate leading-tight">${client.nombre || 'Sin Nombre'}</h3>${distBadge}</div><p class="text-[11px] text-gray-500 truncate mt-1 font-medium"><span class="font-bold text-gray-800 bg-gray-100 px-1.5 py-0.5 rounded mr-1"># ${client.codigo || 'S/N'}</span> ${subtext}</p></div>`;
+                card.innerHTML = `<div class="w-12 h-12 rounded-2xl bg-gray-50 dark:bg-gray-700 text-imade-dark dark:text-gray-300 flex items-center justify-center font-black text-lg shrink-0 border border-gray-200 dark:border-gray-600 transition-colors">${initial}</div><div class="flex-1 min-w-0"><div class="flex justify-between items-start mb-0.5"><h3 class="font-bold text-gray-900 dark:text-white text-[13px] truncate leading-tight">${client.nombre || 'Sin Nombre'}</h3>${distBadge}</div><p class="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-1 font-medium"><span class="font-bold text-gray-800 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 px-1.5 py-0.5 rounded mr-1 transition-colors"># ${client.codigo || 'S/N'}</span> ${subtext}</p></div>`;
                 container.appendChild(card);
             });
         }
@@ -1279,20 +1166,6 @@
             else if (currentSortMethod === 'name') { filtered.sort((a, b) => { let nameA = a.nombre ? String(a.nombre).toLowerCase() : ''; let nameB = b.nombre ? String(b.nombre).toLowerCase() : ''; return nameA.localeCompare(nameB); }); }
             else if (currentSortMethod === 'code') { filtered.sort((a, b) => { let numA = parseInt(a.codigo); let numB = parseInt(b.codigo); if(!isNaN(numA) && !isNaN(numB)) return numA - numB; return String(a.codigo).localeCompare(String(b.codigo)); }); }
             renderClientList(filtered);
-        }
-
-        async function syncData() {
-            const icon = document.querySelector('#btn-sync i'); icon.classList.add('fa-spin');
-            try {
-                const response = await fetch(GOOGLE_APP_SCRIPT_URL);
-                const data = await response.json();
-                if (data && data.length > 0) {
-                    clients = data; saveToLocalStorage();
-                    if (!document.getElementById('screen-search').classList.contains('hidden')) filterClients(); 
-                    showToast("Sincronizado correctamente", `<strong>${data.length}</strong> clientes en la base`, "fa-cloud-arrow-down");
-                }
-            } catch (error) { if(event && event.type === 'click') showToast("Sin conexión", "Usando <strong>base local</strong>.", "fa-wifi"); } 
-            finally { icon.classList.remove('fa-spin'); }
         }
 
         function selectClientForRoute(client) {
@@ -1370,6 +1243,80 @@
         function openWaze() { if (!selectedClient) return; window.open(`https://waze.com/ul?ll=${selectedClient.lat},${selectedClient.lng}&navigate=yes`, '_blank'); }
         function openGoogleMaps() { if (!selectedClient) return; let url = (window.userLat && window.userLng) ? `https://www.google.com/maps/dir/?api=1&origin=${window.userLat},${window.userLng}&destination=${selectedClient.lat},${selectedClient.lng}&travelmode=driving` : `https://www.google.com/maps/search/?api=1&query=${selectedClient.lat},${selectedClient.lng}`; window.open(url, '_blank'); }
 
+        // =========================================================================
+        // OFFLINE SYNC SYSTEM - MODO SIN CONEXIÓN
+        // =========================================================================
+        window.addEventListener('online', () => {
+            showToast("Conexión Recuperada", "Señal de internet reestablecida.", "fa-wifi", "text-green-500", "bg-green-50 border-green-200");
+            syncOfflineQueue();
+        });
+        
+        window.addEventListener('offline', () => {
+            showToast("Modo Offline", "Guardaremos tus datos localmente.", "fa-wifi", "text-orange-500", "bg-orange-50 border-orange-200");
+        });
+
+        function updateOfflineBadge() {
+            let queue = JSON.parse(localStorage.getItem('imade_offline_queue') || '[]');
+            const badge = document.getElementById('sync-badge');
+            if (badge) {
+                if (queue.length > 0) {
+                    badge.classList.remove('hidden');
+                    badge.innerText = queue.length;
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        }
+
+        async function syncOfflineQueue() {
+            let queue = JSON.parse(localStorage.getItem('imade_offline_queue') || '[]');
+            if (queue.length === 0) return;
+
+            showToast("Sincronizando...", `Enviando ${queue.length} clientes en cola.`, "fa-cloud-arrow-up", "text-blue-500");
+            const btnSave = document.getElementById('btn-sync');
+            if(btnSave) btnSave.querySelector('i').classList.add('fa-spin');
+            
+            let remainingQueue = [];
+            for (let client of queue) {
+                try {
+                    await fetch(GOOGLE_APP_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(client) });
+                } catch (err) {
+                    remainingQueue.push(client); // Falló el envío de este, se queda
+                }
+            }
+            
+            localStorage.setItem('imade_offline_queue', JSON.stringify(remainingQueue));
+            updateOfflineBadge();
+            if(btnSave) btnSave.querySelector('i').classList.remove('fa-spin');
+            
+            if (remainingQueue.length === 0) {
+                showToast("¡Al día!", "Datos offline sincronizados.", "fa-check");
+            } else {
+                showToast("Sincronización Parcial", `Quedan ${remainingQueue.length} por subir.`, "fa-triangle-exclamation", "text-orange-500");
+            }
+        }
+
+        async function syncData() {
+            syncOfflineQueue(); // Trata de vaciar la cola antes de descargar nuevos
+            
+            const icon = document.querySelector('#btn-sync i'); 
+            if(icon) icon.classList.add('fa-spin');
+            
+            try {
+                const response = await fetch(GOOGLE_APP_SCRIPT_URL);
+                const data = await response.json();
+                if (data && data.length > 0) {
+                    clients = data; saveToLocalStorage();
+                    if (!document.getElementById('screen-search').classList.contains('hidden')) filterClients(); 
+                    showToast("Sincronizado correctamente", `<strong>${data.length}</strong> clientes en la base`, "fa-cloud-arrow-down");
+                }
+            } catch (error) { 
+                if(event && event.type === 'click') showToast("Sin conexión", "Usando <strong>base local</strong>.", "fa-wifi"); 
+            } finally { 
+                if(icon) icon.classList.remove('fa-spin'); 
+            }
+        }
+
         async function saveClient(e) {
             e.preventDefault();
             
@@ -1388,7 +1335,9 @@
 
             if (!window.userLat || !window.userLng) { openGpsModal(); return; }
             
-            const btnSave = document.getElementById('btn-save'); btnSave.disabled = true; btnSave.innerHTML = '<div class="loader mr-2 border-white border-t-transparent w-5 h-5 border-2"></div> Subiendo...';
+            const btnSave = document.getElementById('btn-save'); 
+            btnSave.disabled = true; 
+            btnSave.innerHTML = '<div class="loader mr-2 border-white border-t-transparent w-5 h-5 border-2"></div> Guardando...';
             
             const newClient = {
                 piloto: document.getElementById('reg-pilot').value,
@@ -1404,6 +1353,7 @@
                 fecha: new Date().toLocaleString('es-GT')
             };
 
+            // 1. Guardar de forma local primero (Así lo ven en el mapa inmediatamente)
             clients.unshift({
                 codigo: newClient.codigoCliente,
                 nombre: newClient.nombreCliente,
@@ -1417,15 +1367,33 @@
             });
             saveToLocalStorage();
 
-            try { await fetch(GOOGLE_APP_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newClient) }); } catch (err) {}
+            // 2. Intentar mandarlo online / offline
+            if(navigator.onLine) {
+                try { 
+                    await fetch(GOOGLE_APP_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newClient) }); 
+                    showToast("¡Éxito!", "Cliente registrado exitosamente.", "fa-check");
+                } catch (err) {
+                    addToOfflineQueue(newClient);
+                }
+            } else {
+                addToOfflineQueue(newClient);
+            }
+
             setTimeout(() => { 
-                showToast("¡Éxito!", "Cliente registrado exitosamente.", "fa-check"); 
                 document.getElementById('register-form').reset(); 
                 document.getElementById('reg-pais').value = 'Guatemala'; 
                 btnSave.disabled = false; 
                 btnSave.innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-2 text-lg"></i> Guardar Cliente'; 
                 switchTab('home'); 
             }, 800);
+        }
+
+        function addToOfflineQueue(clientData) {
+            let queue = JSON.parse(localStorage.getItem('imade_offline_queue') || '[]');
+            queue.push(clientData);
+            localStorage.setItem('imade_offline_queue', JSON.stringify(queue));
+            updateOfflineBadge();
+            showToast("Guardado Local 📶", "Se subirá al recuperar señal.", "fa-hdd", "text-orange-500");
         }
 
         let toastTimeout;
@@ -1435,7 +1403,8 @@
             document.getElementById('toast-msg').innerHTML = msg; 
             
             const iconDiv = document.getElementById('toast-icon');
-            iconDiv.className = `w-10 h-10 rounded-full flex items-center justify-center shrink-0 border ${bgIcon}`;
+            // Adaptando el icono al modo oscuro también
+            iconDiv.className = `w-10 h-10 rounded-full flex items-center justify-center shrink-0 border dark:bg-gray-800 dark:border-gray-700 ${bgIcon}`;
             iconDiv.innerHTML = `<i class="fa-solid ${icon} ${textColor} text-lg"></i>`;
             
             toast.classList.remove('opacity-0', '-translate-y-[150%]', 'pointer-events-none');
