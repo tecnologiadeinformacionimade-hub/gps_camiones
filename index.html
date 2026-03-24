@@ -16,7 +16,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RutasApp">
-    <!-- Manifest codificado para mayor compatibilidad con Android -->
+    <!-- Manifest codificado -->
     <link rel="manifest" href='data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22RutasApp%20Grupo%20Imade%22%2C%22short_name%22%3A%22RutasApp%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f8fafc%22%2C%22theme_color%22%3A%22%2322387a%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F854%2F854878.png%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%2C%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F854%2F854878.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D'>
 
     <!-- Tailwind CSS -->
@@ -98,9 +98,9 @@
 
     <script>
         // =====================================================================
-        // SITEMA DE AUTO-ACTUALIZACIÓN PARA PWAs (VERSIÓN 1.5)
+        // SITEMA DE AUTO-ACTUALIZACIÓN PARA PWAs (VERSIÓN 1.6)
         // =====================================================================
-        const APP_VERSION = "1.5"; // <-- Versión 1.5: Anuncio S.O.S Media Pantalla y Fix Vibración
+        const APP_VERSION = "1.6"; // <-- Versión 1.6: Alarma agresiva en background simulado
         const currentVersion = localStorage.getItem('imade_app_version');
         
         if (currentVersion !== APP_VERSION) {
@@ -115,13 +115,11 @@
                     }).catch(e => console.warn("SW getRegistrations error:", e));
                 } catch(e) { console.warn("SW API error:", e); }
             }
-            // Borrar caché nativo
             if ('caches' in window) {
                 caches.keys().then(function(names) {
                     for (let name of names) caches.delete(name);
                 });
             }
-            // Recargar forzosamente sin caché
             window.location.reload(true);
         }
     </script>
@@ -204,7 +202,7 @@
         </div>
         <h2 class="text-3xl font-black text-white mb-3 tracking-tight drop-shadow-md">¡ALERTA S.O.S!</h2>
         <p id="sos-receive-text" class="text-red-100 text-base font-medium leading-relaxed max-w-xs mx-auto drop-shadow-sm">Un compañero necesita ayuda.</p>
-        <p class="text-white/60 text-xs mt-6"><i class="fa-solid fa-volume-high mr-1"></i> El sonido continuará por seguridad</p>
+        <p class="text-white/60 text-xs mt-6"><i class="fa-solid fa-volume-high mr-1"></i> La alarma y vibración continúan</p>
     </div>
 
     <!-- Firebase Real-time Integration -->
@@ -318,7 +316,7 @@
                         window.dismissSosBanner();
                     }
 
-                    // LÓGICA DE NOTIFICACIONES Y ANUNCIO S.O.S (Media Pantalla)
+                    // LÓGICA AGRESIVA DE NOTIFICACIONES Y ANUNCIO S.O.S
                     if (anySOS && !window.wasSosActive && activeSosPilots.length > 0) {
                         let sosPilot = activeSosPilots[0];
                         let dist = window.calculateDistance ? window.calculateDistance(window.userLat, window.userLng, sosPilot.lat, sosPilot.lng) : null;
@@ -328,7 +326,6 @@
                         document.getElementById('sos-receive-text').innerHTML = `El piloto <strong>${sosPilot.name}</strong> solicita apoyo urgente a <strong>${distStr}</strong>.`;
                         const sosBanner = document.getElementById('sos-receive-modal');
                         sosBanner.classList.remove('hidden');
-                        // Usar requestAnimationFrame para permitir que el elemento se pinte antes de aplicar la transformación CSS
                         requestAnimationFrame(() => {
                             requestAnimationFrame(() => {
                                 sosBanner.classList.remove('-translate-y-full');
@@ -336,20 +333,19 @@
                             });
                         });
 
-                        // 2. Hacer vibrar el dispositivo fuertemente (si el navegador lo permite)
-                        if (navigator.vibrate) {
-                            // Patrón agresivo de vibración SOS
-                            navigator.vibrate([500, 250, 500, 250, 500, 250, 1000]);
-                        }
+                        // 2. Intentar despertar la pantalla manteniendo el WakeLock activo
+                        if (window.requestWakeLock) window.requestWakeLock();
 
-                        // 3. Lanzar notificación OS Push (Intentando siempre el ServiceWorker y haciendo Fallback a Notification API)
-                        const notifTitle = "🚨 ¡ALERTA S.O.S! 🚨";
+                        // 3. Notificación OS Push (Usando Tag y Renotify para forzar que vuelva a sonar en Android)
+                        const notifTitle = "🚨 ALERTA S.O.S 🚨";
                         const notifOptions = {
-                            body: `El piloto ${sosPilot.name} solicita apoyo a ${distStr}.`,
+                            body: `URGENTE: ${sosPilot.name} solicita apoyo a ${distStr}.`,
                             icon: "https://cdn-icons-png.flaticon.com/512/854/854878.png",
                             badge: "https://cdn-icons-png.flaticon.com/512/854/854878.png",
-                            vibrate: [500, 250, 500, 250, 500, 250, 500, 250, 500],
-                            requireInteraction: true
+                            vibrate: [500, 250, 500, 250, 1000, 250, 500, 250, 500],
+                            requireInteraction: true,
+                            tag: 'sos-alert', // El TAG y RENOTIFY hacen que Android no agrupe en silencio
+                            renotify: true
                         };
 
                         if ('Notification' in window && Notification.permission === 'granted') {
@@ -384,8 +380,12 @@
             });
             
             document.addEventListener("visibilitychange", () => {
-                if (document.visibilityState === 'visible' && window.requestWakeLock) {
-                    window.requestWakeLock();
+                if (document.visibilityState === 'visible') {
+                    if(window.requestWakeLock) window.requestWakeLock();
+                    // Si se abrió la app y hay SOS, asegurar que suena/vibra
+                    if(window.wasSosActive && window.manageSOSAudio) {
+                        window.manageSOSAudio(true);
+                    }
                 }
             });
 
@@ -478,7 +478,7 @@
                         <i class="fa-solid fa-laptop-code text-imade-light"></i>
                         <span>Creado por <strong>Depto. de IT</strong></span>
                     </div>
-                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest" id="app-version-text">Versión 1.5</p>
+                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest" id="app-version-text">Versión 1.6</p>
                 </div>
             </div>
 
@@ -852,6 +852,9 @@
             } catch (err) {}
         }
 
+        // =========================================================================
+        // NUEVA LÓGICA DE ALARMA: VIBRACIÓN CONTINUA Y SONIDO
+        // =========================================================================
         let sosInterval;
         let isSosPlaying = false;
         let audioCtx = null;
@@ -860,8 +863,10 @@
                 isSosPlaying = true;
                 if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 if(audioCtx.state === 'suspended') audioCtx.resume();
+                
                 sosInterval = setInterval(() => {
                     try {
+                        // Sonido Web Audio API (Sobrevive más en background en iOS)
                         const osc = audioCtx.createOscillator();
                         const gain = audioCtx.createGain();
                         osc.type = 'square';
@@ -872,11 +877,17 @@
                         gain.connect(audioCtx.destination);
                         osc.start();
                         osc.stop(audioCtx.currentTime + 0.4);
+
+                        // VIBRACIÓN CONTINUA DE HARDWARE (Android)
+                        if (navigator.vibrate) {
+                            navigator.vibrate([400, 200]);
+                        }
                     } catch(e) {}
-                }, 500);
+                }, 600); // Se repite cada 600ms
             } else if (!anySOS && isSosPlaying) {
                 isSosPlaying = false;
                 clearInterval(sosInterval);
+                if (navigator.vibrate) navigator.vibrate(0); // Apagar vibración
             }
         };
 
@@ -1284,9 +1295,6 @@
             finally { icon.classList.remove('fa-spin'); }
         }
 
-        // =====================================================================
-        // FIX: ASIGNACIÓN CORRECTA DE LOS VALORES EN LA FICHA DE CLIENTE
-        // =====================================================================
         function selectClientForRoute(client) {
             selectedClient = client;
             if (!selectedClient.lat || !selectedClient.lng || (selectedClient.lat === 0 && selectedClient.lng === 0)) { 
@@ -1294,7 +1302,6 @@
                 return; 
             }
             
-            // Asignando directamente a los IDs que ya existen en el HTML
             document.getElementById('map-client-name').textContent = client.nombre || 'Sin Nombre';
             
             const codeEl = document.getElementById('map-client-code');
@@ -1309,7 +1316,6 @@
             const deptoEl = document.getElementById('map-client-depto');
             if (deptoEl) deptoEl.textContent = client.departamento || 'N/A';
             
-            // Sección Teléfono
             const phoneContainer = document.getElementById('map-client-phone-container');
             const phoneLink = document.getElementById('map-client-phone-link');
             const telStr = String(client.telefono || '').trim(); 
