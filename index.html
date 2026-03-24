@@ -231,7 +231,7 @@
         </div>
         <h2 class="text-3xl font-black text-white mb-3 tracking-tight drop-shadow-md">¡ALERTA S.O.S!</h2>
         <p id="sos-receive-text" class="text-red-100 text-base font-medium leading-relaxed max-w-xs mx-auto drop-shadow-sm">Un compañero necesita ayuda.</p>
-        <p class="text-white/60 text-xs mt-6"><i class="fa-solid fa-volume-high mr-1"></i> La alarma y vibración continúan</p>
+        <p class="text-white/60 text-xs mt-6"><i class="fa-solid fa-bell-slash mr-1"></i> Cierra para silenciar la alarma</p>
     </div>
 
     <!-- Firebase Real-time Integration -->
@@ -306,6 +306,10 @@
                 sosBanner.classList.remove('translate-y-0');
                 sosBanner.classList.add('-translate-y-full');
                 setTimeout(() => { sosBanner.classList.add('hidden'); }, 500);
+
+                // NUEVO: Silenciar localmente al cerrar el aviso
+                window.isMutedLocally = true;
+                if (window.manageSOSAudio) window.manageSOSAudio(false);
             };
 
             window.startPilotsListener = () => {
@@ -341,6 +345,7 @@
                     }
 
                     if (anySOS && !window.wasSosActive && activeSosPilots.length > 0) {
+                        window.isMutedLocally = false; // Resetear mute si es una alerta nueva
                         let sosPilot = activeSosPilots[0];
                         let dist = window.calculateDistance ? window.calculateDistance(window.userLat, window.userLng, sosPilot.lat, sosPilot.lng) : null;
                         let distStr = dist ? dist.toFixed(1) + ' km' : 'distancia desconocida';
@@ -821,7 +826,7 @@
         let isSosPlaying = false;
         
         window.manageSOSAudio = function(anySOS) {
-            if (anySOS && !isSosPlaying) {
+            if (anySOS && !isSosPlaying && !window.isMutedLocally) {
                 isSosPlaying = true;
                 try {
                     const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -855,10 +860,11 @@
                         }
                     } catch(e) {}
                 }, 600); // Se repite cada 600ms
-            } else if (!anySOS && isSosPlaying) {
+            } else if ((!anySOS || window.isMutedLocally) && isSosPlaying) {
                 isSosPlaying = false;
                 clearInterval(sosInterval);
                 if (navigator.vibrate) navigator.vibrate(0); // Apagar vibración
+                try { if(audioCtx && audioCtx.state === 'running') audioCtx.suspend(); } catch(e) {} // FORZAR SILENCIO ABSOLUTO
             }
         };
 
@@ -1016,9 +1022,10 @@
         function cancelSOS() {
             clearInterval(mySosInterval);
             document.getElementById('sos-active-modal').classList.add('hidden');
-            if (window.updatePilotLocation && window.userLat && window.userLng) {
-                window.updatePilotLocation(window.userLat, window.userLng, 'activo');
+            if (window.updatePilotLocation) {
+                window.updatePilotLocation(window.userLat || 0, window.userLng || 0, 'activo');
             }
+            if (window.manageSOSAudio) window.manageSOSAudio(false);
             showToast("S.O.S Finalizado", "Tu estado volvió a activo", "fa-check-circle");
         }
 
