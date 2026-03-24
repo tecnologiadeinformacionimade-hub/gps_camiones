@@ -16,8 +16,13 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RutasApp">
-    <!-- Manifest codificado -->
-    <link rel="manifest" href='data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22RutasApp%20Grupo%20Imade%22%2C%22short_name%22%3A%22RutasApp%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f8fafc%22%2C%22theme_color%22%3A%22%2322387a%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F854%2F854878.png%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%2C%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F854%2F854878.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D'>
+    
+    <!-- ÍCONOS DE LA APP (app.jpg) -->
+    <link rel="icon" type="image/jpeg" href="app.jpg">
+    <link rel="apple-touch-icon" href="app.jpg">
+    
+    <!-- Manifest codificado actualizado para usar app.jpg -->
+    <link rel="manifest" href='data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22RutasApp%20Grupo%20Imade%22%2C%22short_name%22%3A%22RutasApp%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f8fafc%22%2C%22theme_color%22%3A%22%2322387a%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22app.jpg%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fjpeg%22%7D%2C%7B%22src%22%3A%22app.jpg%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fjpeg%22%7D%5D%7D'>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -100,7 +105,7 @@
         // =====================================================================
         // SITEMA DE AUTO-ACTUALIZACIÓN PARA PWAs (VERSIÓN 1.6)
         // =====================================================================
-        const APP_VERSION = "1.7.1"; // <-- Versión 1.6: Alarma agresiva en background simulado
+        const APP_VERSION = "1.6"; // <-- Versión 1.6: Alarma agresiva en background simulado
         const currentVersion = localStorage.getItem('imade_app_version');
         
         if (currentVersion !== APP_VERSION) {
@@ -349,8 +354,8 @@
                         const notifTitle = "🚨 ALERTA S.O.S 🚨";
                         const notifOptions = {
                             body: `URGENTE: ${sosPilot.name} solicita apoyo a ${distStr}.`,
-                            icon: "https://cdn-icons-png.flaticon.com/512/854/854878.png",
-                            badge: "https://cdn-icons-png.flaticon.com/512/854/854878.png",
+                            icon: "app.jpg", // Ícono notif actualizado
+                            badge: "app.jpg", // Ícono notif actualizado
                             vibrate: [500, 250, 500, 250, 1000, 250, 500, 250, 500],
                             requireInteraction: true,
                             tag: 'sos-alert', // El TAG y RENOTIFY hacen que Android no agrupe en silencio
@@ -429,7 +434,7 @@
             <div id="screen-home" class="screen w-full h-full flex flex-col px-5 py-3 overflow-hidden">
                 
                 <div class="flex flex-col items-center justify-center mt-1 mb-3">
-                    <img src="app.jpg" alt="Grupo Imade" class="h-16 object-contain mb-3 filter drop-shadow-sm" onerror="this.style.display='none'">
+                    <img src="app.jpg" alt="Grupo Imade" class="h-16 w-16 rounded-2xl object-cover mb-3 filter drop-shadow-sm" onerror="this.style.display='none'">
                     <h2 class="text-2xl font-black text-imade-dark text-center tracking-tight">¡Bienvenido!</h2>
                 </div>
                 
@@ -830,7 +835,7 @@
                         if ('serviceWorker' in navigator) {
                             try {
                                 navigator.serviceWorker.getRegistrations().then(regs => {
-                                    if(regs && regs.length > 0) regs[0].showNotification("RutasApp", {body:"Permisos listos", icon: "https://cdn-icons-png.flaticon.com/512/854/854878.png"}).catch(e => console.warn(e));
+                                    if(regs && regs.length > 0) regs[0].showNotification("RutasApp", {body:"Permisos listos", icon: "app.jpg"}).catch(e => console.warn(e));
                                 }).catch(e => console.warn("SW getRegistrations error:", e));
                             } catch(e) {}
                         }
