@@ -125,16 +125,16 @@
 
     <script>
         // =========================================================
-        // SISTEMA DE ACTUALIZACIÓN AGRESIVA - VERSIÓN 2.2.6
+        // SISTEMA DE ACTUALIZACIÓN AGRESIVA - VERSIÓN 2.2.7
         // =========================================================
-        const APP_VERSION = "2.2.6"; 
+        const APP_VERSION = "2.2.7"; 
         const currentVersion = localStorage.getItem('imade_app_version');
         
         if (currentVersion !== APP_VERSION) {
             console.log("Nueva versión detectada (" + APP_VERSION + "). Limpiando caché agresivamente...");
             localStorage.setItem('imade_app_version', APP_VERSION);
             
-            // Destruir Service Workers antiguos para evitar versiones en caché
+            // Destruir Service Workers antiguos
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.getRegistrations().then(function(registrations) {
                     for(let registration of registrations) { registration.unregister(); }
@@ -148,7 +148,7 @@
                 });
             }
             
-            // Forzar recarga limpiando el estado de la página
+            // Forzar recarga
             window.location.href = window.location.href.split('?')[0] + '?v=' + new Date().getTime();
         }
     </script>
@@ -305,47 +305,41 @@
     </div>
 
     <!-- ======================================================= -->
-    <!-- FIREBASE INTEGRATION (NUEVA CONFIGURACIÓN + BACKUP LOGIC)-->
+    <!-- FIREBASE INTEGRATION (CONFIGURACIÓN ORIGINAL DEL RESPALDO)-->
     <!-- ======================================================= -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         window.latestPilots = [];
 
-        // Forzamos el ID de la app para que todos los usuarios guarden en la misma colección exacta
+        // Forzamos el ID de la app de tu respaldo para asegurar escritura en el lugar correcto
         const appId = 'rutas-imade-pro'; 
         
-        // Configuración EXACTA proporcionada
+        // ¡CONEXIÓN RESTAURADA! - Usando tu Base de Datos original que sí funcionaba
         const firebaseConfig = {
-            apiKey: "AIzaSyDuTcXKVb4VkpAkbT3ubaBUZ1U9uvuUrhg",
-            authDomain: "base-de-datos---imade.firebaseapp.com",
-            projectId: "base-de-datos---imade",
-            storageBucket: "base-de-datos---imade.firebasestorage.app",
-            messagingSenderId: "917430366848",
-            appId: "1:917430366848:web:fdc520577676e27e54ec65",
-            measurementId: "G-MZRQYZXH2P"
+            apiKey: "AIzaSyDCum0Z8j33F2g8aVZxaPIzyWaN1tunSTk",
+            authDomain: "rutasapp-imade.firebaseapp.com",
+            projectId: "rutasapp-imade",
+            storageBucket: "rutasapp-imade.firebasestorage.app",
+            messagingSenderId: "320301869648",
+            appId: "1:320301869648:web:046645830d4b0d036d7f55"
         };
 
         const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
         window.firebaseDb = db;
         window.firebaseAppId = appId;
 
-        // Lógica de Autenticación Idéntica al Backup Funcional (Simple y limpia)
+        // Lógica de Autenticación Exacta al Backup Funcional
         const initAuth = async () => { 
             try {
                 await signInAnonymously(auth); 
             } catch(error) {
                 console.error("Error Auth Firebase:", error);
-                setTimeout(() => {
-                    alert("⚠️ Error Firebase: Por favor, en tu consola de Firebase ve a 'Authentication' y activa el método de inicio de sesión 'Anónimo'.");
-                }, 3000);
             }
         };
         initAuth();
@@ -360,10 +354,10 @@
             }
         });
 
+        // Escribimos en BD con los nuevos campos de Motivo y Emoji
         window.updatePilotLocation = async (lat, lng, status, reason = '', emoji = '') => {
             if(!window.currentUser || !window.firebaseDb) return;
             try {
-                // Escribir en la ruta fija: artifacts/rutas-imade-pro/public/data/pilotos
                 const pilotRef = doc(window.firebaseDb, 'artifacts', window.firebaseAppId, 'public', 'data', 'pilotos', window.currentUser.uid);
                 await setDoc(pilotRef, {
                     lat, lng, status,
@@ -397,10 +391,9 @@
 
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    // Filtrar pilotos inactivos (más de 1 hora)
                     if (now - data.timestamp < 3600000) { 
                         pilots.push({...data, id: doc.id});
-                        // Si status es SOS y el ID no es el mío, alguien activó la alerta
+                        // Si alguien más manda un SOS
                         if(data.status === 'SOS' && doc.id !== window.currentUser.uid) {
                             anySOS = true;
                             activeSosPilots.push({...data, id: doc.id});
@@ -414,19 +407,18 @@
                     window.renderPilotsMap(pilots);
                 }
                 
-                // Dispara el sonido general si detecta SOS de alguien más
                 if (window.manageSOSAudio) window.manageSOSAudio(anySOS); 
 
                 if (!anySOS && window.wasSosActive) {
                     window.dismissSosBanner();
                 }
 
-                // Desplegar Modal SOS y Notificación en tiempo real
+                // Desplegar Modal de Emergencia en todos los dispositivos
                 if (anySOS && !window.wasSosActive && activeSosPilots.length > 0) {
                     let sosPilot = activeSosPilots[0];
                     let dist = window.calculateDistance ? window.calculateDistance(window.userLat, window.userLng, sosPilot.lat, sosPilot.lng) : null;
                     let distStr = dist ? dist.toFixed(1) + ' km' : 'distancia desconocida';
-                    let reasonText = sosPilot.reason || "Emergencia no especificada";
+                    let reasonText = sosPilot.reason || "Emergencia S.O.S";
                     let emoji = sosPilot.emoji || '🚨';
                     
                     document.getElementById('sos-receive-reason').innerHTML = `<span>${emoji}</span> <span>${reasonText}</span>`;
@@ -579,7 +571,7 @@
                         <i class="fa-solid fa-laptop-code text-imade-light"></i>
                         <span>Creado por <strong>Depto. de IT</strong></span>
                     </div>
-                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest" id="app-version-text">Versión 2.2.6</p>
+                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest" id="app-version-text">Versión 2.2.7</p>
                 </div>
             </div>
 
