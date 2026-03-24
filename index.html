@@ -16,13 +16,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RutasApp">
-    
-    <!-- ÍCONOS DE LA APP (app.jpg) -->
-    <link rel="icon" type="image/jpeg" href="app.jpg">
-    <link rel="apple-touch-icon" href="app.jpg">
-    
-    <!-- Manifest codificado actualizado para usar app.jpg -->
-    <link rel="manifest" href='data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22RutasApp%20Grupo%20Imade%22%2C%22short_name%22%3A%22RutasApp%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f8fafc%22%2C%22theme_color%22%3A%22%2322387a%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22app.jpg%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fjpeg%22%7D%2C%7B%22src%22%3A%22app.jpg%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fjpeg%22%7D%5D%7D'>
+    <!-- Manifest codificado -->
+    <link rel="manifest" href='data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22RutasApp%20Grupo%20Imade%22%2C%22short_name%22%3A%22RutasApp%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f8fafc%22%2C%22theme_color%22%3A%22%2322387a%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F854%2F854878.png%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%2C%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F854%2F854878.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D'>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -37,6 +32,10 @@
                             bg: '#f8fafc',
                             card: '#ffffff'
                         }
+                    },
+                    animation: {
+                        'ping-slow': 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite',
+                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                     }
                 }
             }
@@ -45,7 +44,7 @@
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
@@ -66,7 +65,7 @@
             border-top: 1px solid rgba(255,255,255,0.6);
         }
         .ios-toast {
-            background: rgba(255, 255, 255, 0.75);
+            background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(25px) saturate(180%);
             -webkit-backdrop-filter: blur(25px) saturate(180%);
             border: 1px solid rgba(255, 255, 255, 0.5);
@@ -97,22 +96,21 @@
         .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
         
         /* Animación agresiva para SOS */
-        @keyframes sosBlink { 0%, 100% { background-color: #ef4444; transform: scale(1); } 50% { background-color: #991b1b; transform: scale(1.2); } }
-        .sos-danger-blink { animation: sosBlink 0.4s infinite; border: 4px solid white !important; }
+        @keyframes sosBlink { 0%, 100% { background-color: #ef4444; transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 50% { background-color: #dc2626; transform: scale(1.15); box-shadow: 0 0 20px 10px rgba(239, 68, 68, 0); } }
+        .sos-danger-blink { animation: sosBlink 0.8s cubic-bezier(0.4, 0, 0.6, 1) infinite; border: 3px solid white !important; }
+
+        /* Path Animation for Map Trails */
+        .leaflet-interactive { transition: stroke-dashoffset 1s linear; }
     </style>
 
     <script>
-        // =====================================================================
-        // SITEMA DE AUTO-ACTUALIZACIÓN PARA PWAs (VERSIÓN 1.6)
-        // =====================================================================
-        const APP_VERSION = "1.6"; // <-- Versión 1.6: Alarma agresiva en background simulado
+        const APP_VERSION = "2.0"; 
         const currentVersion = localStorage.getItem('imade_app_version');
         
         if (currentVersion !== APP_VERSION) {
             console.log("Nueva versión detectada. Limpiando caché...");
             localStorage.setItem('imade_app_version', APP_VERSION);
             
-            // Borrar Service Workers viejos
             if ('serviceWorker' in navigator) {
                 try {
                     navigator.serviceWorker.getRegistrations().then(function(registrations) {
@@ -133,8 +131,8 @@
 
     <!-- PANTALLA DE INSTALACIÓN OBLIGATORIA (PWA) -->
     <div id="install-screen" class="fixed inset-0 z-[99999] bg-white flex flex-col items-center justify-center p-6 text-center hidden">
-        <img src="app.jpg" alt="RutasApp" class="w-32 h-32 rounded-3xl shadow-2xl mb-6 object-cover" onerror="this.src='https://cdn-icons-png.flaticon.com/512/854/854878.png'">
-        <h2 class="text-3xl font-black text-imade-dark mb-3">Instala RutasApp</h2>
+        <img src="https://cdn-icons-png.flaticon.com/512/854/854878.png" alt="RutasApp" class="w-32 h-32 rounded-3xl shadow-2xl mb-6 object-cover bg-blue-50 p-4">
+        <h2 class="text-3xl font-black text-imade-dark mb-3 tracking-tight">Instala RutasApp</h2>
         <p class="text-gray-500 mb-8 font-medium px-4 leading-relaxed text-sm">Para continuar y garantizar que el GPS funcione en tiempo real, instala la aplicación dando clic en el botón de abajo.</p>
         
         <button id="btn-install" class="w-full max-w-xs bg-imade-light text-white font-black py-4 rounded-2xl shadow-[0_10px_20px_rgba(54,168,225,0.3)] active:scale-95 transition-transform text-lg flex items-center justify-center">
@@ -181,33 +179,84 @@
         </div>
     </div>
 
-    <!-- PANTALLA DE S.O.S ACTIVO (Para quien lo INICIA) -->
-    <div id="sos-active-modal" class="fixed inset-0 bg-red-900/95 z-[99990] hidden flex-col items-center justify-center backdrop-blur-md px-6 text-center">
-        <div class="w-32 h-32 bg-red-500 rounded-full flex items-center justify-center mb-6 animate-pulse shadow-[0_0_50px_rgba(239,68,68,0.6)]">
-            <i class="fa-solid fa-triangle-exclamation text-6xl text-white"></i>
+    <!-- 1. NUEVO: SELECCIÓN DE MOTIVO S.O.S -->
+    <div id="sos-reason-modal" class="fixed inset-0 bg-black/90 z-[99990] hidden flex-col items-center justify-center backdrop-blur-xl px-4 text-center transition-all">
+        <h2 class="text-3xl font-black text-white mb-2 tracking-tight drop-shadow-md mt-4">¿Cuál es la emergencia?</h2>
+        <p class="text-gray-300 text-sm font-medium mb-8">Selecciona un motivo para alertar a la flota.</p>
+        
+        <div class="w-full max-w-sm grid grid-cols-1 gap-3 px-2">
+            <button onclick="startSosCountdown('💥 Choque o Accidente')" class="bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 text-white font-bold py-4 px-6 rounded-2xl flex items-center gap-4 transition-all active:scale-95 backdrop-blur-sm">
+                <span class="text-3xl bg-red-500/20 p-2 rounded-xl border border-red-500/30">💥</span> <span class="text-lg text-left">Choque / Accidente</span>
+            </button>
+            <button onclick="startSosCountdown('⚠️ Asalto o Robo')" class="bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 text-white font-bold py-4 px-6 rounded-2xl flex items-center gap-4 transition-all active:scale-95 backdrop-blur-sm">
+                <span class="text-3xl bg-orange-500/20 p-2 rounded-xl border border-orange-500/30">⚠️</span> <span class="text-lg text-left">Asalto / Robo</span>
+            </button>
+            <button onclick="startSosCountdown('🚑 Emergencia Médica')" class="bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 text-white font-bold py-4 px-6 rounded-2xl flex items-center gap-4 transition-all active:scale-95 backdrop-blur-sm">
+                <span class="text-3xl bg-blue-500/20 p-2 rounded-xl border border-blue-500/30">🚑</span> <span class="text-lg text-left">Emergencia Médica</span>
+            </button>
+            <button onclick="startSosCountdown('🛠️ Falla Mecánica')" class="bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 text-white font-bold py-4 px-6 rounded-2xl flex items-center gap-4 transition-all active:scale-95 backdrop-blur-sm">
+                <span class="text-3xl bg-gray-500/20 p-2 rounded-xl border border-gray-500/30">🛠️</span> <span class="text-lg text-left">Falla Mecánica</span>
+            </button>
+            <button onclick="startSosCountdown('⛽ Sin Combustible')" class="bg-white/10 hover:bg-white/20 active:bg-white/30 border border-white/20 text-white font-bold py-4 px-6 rounded-2xl flex items-center gap-4 transition-all active:scale-95 backdrop-blur-sm">
+                <span class="text-3xl bg-yellow-500/20 p-2 rounded-xl border border-yellow-500/30">⛽</span> <span class="text-lg text-left">Sin Combustible</span>
+            </button>
         </div>
-        <h2 class="text-3xl font-black text-white mb-2 tracking-tight">S.O.S ACTIVO</h2>
-        <p class="text-red-200 text-sm font-medium mb-8">Tu alerta de emergencia está sonando en toda la flota y tu ubicación está parpadeando en el mapa.</p>
-        
-        <div class="text-7xl font-black text-white mb-10 drop-shadow-lg font-mono" id="sos-timer">30</div>
-        
-        <button onclick="cancelSOS()" class="w-full max-w-xs bg-white text-red-600 font-black py-4 rounded-full shadow-2xl active:scale-95 transition-transform text-lg border border-red-100">
-            Desactivar Alerta
+
+        <button onclick="closeSosMenu()" class="mt-8 text-white/50 font-bold py-3 px-8 rounded-full border border-white/20 hover:bg-white/10 active:scale-95 transition-all">
+            Cancelar
         </button>
     </div>
 
-    <!-- ANUNCIO S.O.S RECIBIDO (MEDIA PANTALLA) PARA ANDROID/IOS FALLBACK -->
-    <div id="sos-receive-modal" class="fixed inset-x-0 top-0 h-[50dvh] bg-red-600/95 backdrop-blur-xl z-[99996] hidden flex flex-col items-center justify-center p-6 text-center shadow-[0_20px_50px_rgba(220,38,38,0.5)] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] -translate-y-full rounded-b-[40px] border-b-4 border-red-400">
-        <button onclick="dismissSosBanner()" class="absolute top-8 right-6 w-12 h-12 bg-black/20 rounded-full text-white flex items-center justify-center hover:bg-black/40 transition-colors active:scale-90">
+    <!-- 2. NUEVO: CUENTA REGRESIVA S.O.S -->
+    <div id="sos-countdown-modal" class="fixed inset-0 bg-red-900/95 z-[99991] hidden flex-col items-center justify-center backdrop-blur-xl px-6 text-center">
+        <h2 class="text-3xl font-black text-white mb-2 tracking-tight">ENVIANDO ALERTA EN...</h2>
+        <p id="sos-selected-reason" class="text-red-200 text-lg font-bold mb-8 bg-black/30 px-6 py-2 rounded-full border border-red-500/30">Motivo</p>
+        
+        <div class="relative w-48 h-48 flex items-center justify-center mb-12">
+            <svg class="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="8"></circle>
+                <circle id="countdown-circle" cx="50" cy="50" r="45" fill="none" stroke="white" stroke-width="8" stroke-dasharray="283" stroke-dashoffset="0" class="transition-all duration-1000 ease-linear"></circle>
+            </svg>
+            <span class="text-8xl font-black text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.5)] font-mono" id="sos-pre-timer">5</span>
+        </div>
+        
+        <button onclick="cancelSosCountdown()" class="w-full max-w-xs bg-white text-red-600 font-black py-5 rounded-2xl shadow-2xl active:scale-95 transition-transform text-xl border-4 border-red-100 hover:bg-red-50">
+            CANCELAR ALERTA
+        </button>
+    </div>
+
+    <!-- PANTALLA DE S.O.S ACTIVO (Para quien lo INICIA - FINAL) -->
+    <div id="sos-active-modal" class="fixed inset-0 bg-red-600 z-[99992] hidden flex-col items-center justify-center px-6 text-center shadow-[inset_0_0_100px_rgba(0,0,0,0.5)]">
+        <div class="w-40 h-40 bg-white rounded-full flex items-center justify-center mb-8 animate-pulse shadow-[0_0_80px_rgba(255,255,255,0.6)] relative">
+            <div class="absolute inset-0 border-8 border-white rounded-full animate-ping opacity-50"></div>
+            <i class="fa-solid fa-triangle-exclamation text-7xl text-red-600"></i>
+        </div>
+        <h2 class="text-4xl font-black text-white mb-2 tracking-tight drop-shadow-lg">S.O.S ACTIVO</h2>
+        <p class="text-red-100 text-lg font-medium mb-10 max-w-xs leading-tight">Tu alerta está sonando en toda la flota y tu ubicación está siendo rastreada.</p>
+        
+        <button onclick="finishSOS()" class="w-full max-w-xs bg-black/20 text-white border-2 border-white/50 font-black py-4 rounded-full hover:bg-black/40 shadow-2xl active:scale-95 transition-all text-lg backdrop-blur-sm">
+            DESACTIVAR ALERTA
+        </button>
+    </div>
+
+    <!-- ANUNCIO S.O.S RECIBIDO (MEDIA PANTALLA) MEJORADO -->
+    <div id="sos-receive-modal" class="fixed inset-x-0 top-0 h-[50dvh] bg-red-600/95 backdrop-blur-2xl z-[99996] hidden flex flex-col items-center justify-center p-6 text-center shadow-[0_20px_50px_rgba(220,38,38,0.5)] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] -translate-y-full rounded-b-[40px] border-b-4 border-red-400">
+        <button onclick="dismissSosBanner()" class="absolute top-8 right-6 w-12 h-12 bg-black/20 rounded-full text-white flex items-center justify-center hover:bg-black/40 transition-colors active:scale-90 border border-white/20">
             <i class="fa-solid fa-xmark text-2xl"></i>
         </button>
-        <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-6 animate-pulse text-red-600 shadow-xl relative">
+        <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-5 animate-pulse text-red-600 shadow-xl relative">
             <div class="absolute inset-0 border-4 border-white rounded-full animate-ping opacity-50"></div>
             <i class="fa-solid fa-triangle-exclamation text-5xl"></i>
         </div>
-        <h2 class="text-3xl font-black text-white mb-3 tracking-tight drop-shadow-md">¡ALERTA S.O.S!</h2>
+        <h2 class="text-3xl font-black text-white mb-2 tracking-tight drop-shadow-md">¡ALERTA S.O.S!</h2>
+        
+        <!-- Badge Motivo -->
+        <div id="sos-receive-reason" class="bg-black/30 text-white font-bold px-4 py-1.5 rounded-full text-sm mb-4 border border-white/20 shadow-inner">
+            Motivo Desconocido
+        </div>
+
         <p id="sos-receive-text" class="text-red-100 text-base font-medium leading-relaxed max-w-xs mx-auto drop-shadow-sm">Un compañero necesita ayuda.</p>
-        <p class="text-white/60 text-xs mt-6"><i class="fa-solid fa-volume-high mr-1"></i> La alarma y vibración continúan</p>
+        <p class="text-white/80 text-xs mt-5 bg-black/20 px-3 py-1 rounded-full"><i class="fa-solid fa-volume-high mr-1"></i> Alarma en curso</p>
     </div>
 
     <!-- Firebase Real-time Integration -->
@@ -223,13 +272,9 @@
         
         let firebaseConfig = {};
         
-        // =====================================================================
-        // CONFIGURACIÓN DE FIREBASE
-        // =====================================================================
         if (configStr) {
             try { firebaseConfig = JSON.parse(configStr); } catch(e) {}
         } else {
-            // Configuración de respaldo proporcionada en el código original
             firebaseConfig = {
                 apiKey: "AIzaSyDCum0Z8j33F2g8aVZxaPIzyWaN1tunSTk",
                 authDomain: "rutasapp-imade.firebaseapp.com",
@@ -250,7 +295,6 @@
 
             const initAuth = async () => { 
                 try {
-                    // Integración robusta según directivas de entornos seguros
                     if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                         await signInWithCustomToken(auth, __initial_auth_token);
                     } else {
@@ -275,12 +319,16 @@
                 }
             });
 
-            window.updatePilotLocation = async (lat, lng, status) => {
+            // Función actualizada para incluir Path y Speed
+            window.updatePilotLocation = async (lat, lng, status, reason = '') => {
                 if(!window.currentUser || !window.firebaseDb) return;
                 try {
                     const pilotRef = doc(window.firebaseDb, 'artifacts', window.firebaseAppId, 'public', 'data', 'pilotos', window.currentUser.uid);
                     await setDoc(pilotRef, {
                         lat, lng, status,
+                        reason: reason,
+                        speed: window.userSpeed || 0,
+                        path: window.myPath || [],
                         name: localStorage.getItem('imade_pilot_name') || "Piloto Anónimo",
                         timestamp: Date.now()
                     });
@@ -289,7 +337,6 @@
                 }
             };
 
-            // Función para ocultar el anuncio de SOS manualmente (El sonido no se apaga aquí)
             window.dismissSosBanner = function() {
                 const sosBanner = document.getElementById('sos-receive-modal');
                 sosBanner.classList.remove('translate-y-0');
@@ -325,19 +372,20 @@
                     
                     if (window.manageSOSAudio) window.manageSOSAudio(anySOS); 
 
-                    // Ocultar banner si ya no hay SOS en curso
                     if (!anySOS && window.wasSosActive) {
                         window.dismissSosBanner();
                     }
 
-                    // LÓGICA AGRESIVA DE NOTIFICACIONES Y ANUNCIO S.O.S
+                    // LÓGICA DE NOTIFICACIONES MEJORADA
                     if (anySOS && !window.wasSosActive && activeSosPilots.length > 0) {
                         let sosPilot = activeSosPilots[0];
                         let dist = window.calculateDistance ? window.calculateDistance(window.userLat, window.userLng, sosPilot.lat, sosPilot.lng) : null;
                         let distStr = dist ? dist.toFixed(1) + ' km' : 'distancia desconocida';
+                        let reasonText = sosPilot.reason || "Emergencia no especificada";
                         
-                        // 1. Mostrar el Banner Visual Interno (Media Pantalla)
-                        document.getElementById('sos-receive-text').innerHTML = `El piloto <strong>${sosPilot.name}</strong> solicita apoyo urgente a <strong>${distStr}</strong>.`;
+                        document.getElementById('sos-receive-reason').innerText = reasonText;
+                        document.getElementById('sos-receive-text').innerHTML = `<strong>${sosPilot.name}</strong> solicita apoyo a <strong>${distStr}</strong>.<br><span class="text-sm opacity-80 mt-1 block">Velocidad actual: ${sosPilot.speed || 0} km/h</span>`;
+                        
                         const sosBanner = document.getElementById('sos-receive-modal');
                         sosBanner.classList.remove('hidden');
                         requestAnimationFrame(() => {
@@ -347,18 +395,16 @@
                             });
                         });
 
-                        // 2. Intentar despertar la pantalla manteniendo el WakeLock activo
                         if (window.requestWakeLock) window.requestWakeLock();
 
-                        // 3. Notificación OS Push (Usando Tag y Renotify para forzar que vuelva a sonar en Android)
                         const notifTitle = "🚨 ALERTA S.O.S 🚨";
                         const notifOptions = {
-                            body: `URGENTE: ${sosPilot.name} solicita apoyo a ${distStr}.`,
-                            icon: "app.jpg", // Ícono notif actualizado
-                            badge: "app.jpg", // Ícono notif actualizado
+                            body: `${reasonText} - ${sosPilot.name} a ${distStr}.`,
+                            icon: "https://cdn-icons-png.flaticon.com/512/854/854878.png",
+                            badge: "https://cdn-icons-png.flaticon.com/512/854/854878.png",
                             vibrate: [500, 250, 500, 250, 1000, 250, 500, 250, 500],
                             requireInteraction: true,
-                            tag: 'sos-alert', // El TAG y RENOTIFY hacen que Android no agrupe en silencio
+                            tag: 'sos-alert',
                             renotify: true
                         };
 
@@ -375,9 +421,7 @@
                                 } else {
                                     new Notification(notifTitle, notifOptions);
                                 }
-                            } catch(e) {
-                                console.log("Notif error", e);
-                            }
+                            } catch(e) { console.log("Notif error", e); }
                         }
                     }
                     window.wasSosActive = anySOS;
@@ -396,7 +440,6 @@
             document.addEventListener("visibilitychange", () => {
                 if (document.visibilityState === 'visible') {
                     if(window.requestWakeLock) window.requestWakeLock();
-                    // Si se abrió la app y hay SOS, asegurar que suena/vibra
                     if(window.wasSosActive && window.manageSOSAudio) {
                         window.manageSOSAudio(true);
                     }
@@ -404,7 +447,7 @@
             });
 
         } else {
-            window.updatePilotLocation = async (lat, lng, status) => { /* Silencioso */ };
+            window.updatePilotLocation = async (lat, lng, status, reason) => { /* Silencioso */ };
             window.startPilotsListener = () => { /* Fallback */ };
         }
     </script>
@@ -434,21 +477,21 @@
             <div id="screen-home" class="screen w-full h-full flex flex-col px-5 py-3 overflow-hidden">
                 
                 <div class="flex flex-col items-center justify-center mt-1 mb-3">
-                    <img src="app.jpg" alt="Grupo Imade" class="h-16 w-16 rounded-2xl object-cover mb-3 filter drop-shadow-sm" onerror="this.style.display='none'">
+                    <img src="https://cdn-icons-png.flaticon.com/512/854/854878.png" alt="Grupo Imade" class="h-16 object-contain mb-3 filter drop-shadow-sm p-2 bg-blue-50 rounded-2xl" onerror="this.style.display='none'">
                     <h2 class="text-2xl font-black text-imade-dark text-center tracking-tight">¡Bienvenido!</h2>
                 </div>
                 
                 <!-- Tarjetas de Acción Rápida -->
                 <div class="grid grid-cols-2 gap-3 mb-3">
-                    <div onclick="switchTab('search')" class="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform hover:shadow-md">
-                        <div class="w-10 h-10 bg-blue-50 text-imade-light rounded-2xl flex items-center justify-center mb-2">
+                    <div onclick="switchTab('search')" class="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform hover:shadow-md hover:border-blue-100">
+                        <div class="w-10 h-10 bg-blue-50 text-imade-light rounded-2xl flex items-center justify-center mb-2 transition-colors">
                             <i class="fa-solid fa-users text-lg"></i>
                         </div>
                         <h3 class="font-bold text-gray-800 text-sm">Buscar<br><span class="text-gray-500 font-medium text-[11px]">Cliente</span></h3>
                     </div>
                     
-                    <div onclick="switchTab('register')" class="bg-gradient-to-br from-imade-dark to-blue-900 p-4 rounded-3xl shadow-md flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform relative overflow-hidden">
-                        <div class="absolute -right-4 -top-4 w-16 h-16 bg-white opacity-5 rounded-full blur-xl"></div>
+                    <div onclick="switchTab('register')" class="bg-gradient-to-br from-imade-dark to-blue-900 p-4 rounded-3xl shadow-md flex flex-col items-center justify-center text-center cursor-pointer active:scale-95 transition-transform relative overflow-hidden group">
+                        <div class="absolute -right-4 -top-4 w-16 h-16 bg-white opacity-5 rounded-full blur-xl group-hover:opacity-20 transition-opacity"></div>
                         <div class="w-10 h-10 bg-white/10 text-white rounded-2xl flex items-center justify-center mb-2 backdrop-blur-sm border border-white/10">
                             <i class="fa-solid fa-location-crosshairs text-lg"></i>
                         </div>
@@ -459,12 +502,12 @@
                 <!-- Estados Divididos: GPS y Piloto -->
                 <div class="grid grid-cols-2 gap-3 mb-4">
                     <!-- Satelital -->
-                    <div class="bg-white rounded-3xl p-3 shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center gap-1.5 transition-colors">
-                        <div id="home-gps-icon" class="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 transition-colors">
+                    <div class="bg-white rounded-3xl p-3 shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center gap-1.5 transition-colors relative overflow-hidden">
+                        <div id="home-gps-icon" class="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 transition-colors z-10">
                             <i class="fa-solid fa-satellite-dish text-sm animate-pulse"></i>
                         </div>
-                        <div>
-                            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Satelital</p>
+                        <div class="z-10">
+                            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Satelital <span id="home-speed" class="text-imade-light ml-1">0 km/h</span></p>
                             <p id="home-gps-status" class="text-[11px] font-bold text-gray-600 leading-tight">Buscando...</p>
                         </div>
                     </div>
@@ -480,10 +523,13 @@
                     </div>
                 </div>
 
-                <!-- BOTÓN S.O.S -->
-                <button onclick="triggerSOS()" class="w-full bg-red-500 text-white font-black py-3.5 rounded-3xl shadow-xl shadow-red-500/30 hover:bg-red-600 transition-all active:scale-95 flex justify-center items-center border border-red-400 overflow-hidden relative group">
+                <!-- BOTÓN S.O.S MEJORADO -->
+                <button onclick="openSosMenu()" class="w-full bg-gradient-to-r from-red-500 to-red-600 text-white font-black py-4 rounded-3xl shadow-[0_10px_25px_rgba(239,68,68,0.4)] hover:shadow-[0_10px_35px_rgba(239,68,68,0.5)] transition-all active:scale-95 flex justify-center items-center border border-red-400 overflow-hidden relative group">
                     <div class="absolute inset-0 bg-white/20 w-full h-full transform -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
-                    <i class="fa-solid fa-triangle-exclamation mr-2 text-xl animate-pulse"></i> EMITIR ALERTA S.O.S
+                    <div class="bg-white/20 p-2 rounded-xl mr-3 backdrop-blur-sm border border-white/30">
+                        <i class="fa-solid fa-triangle-exclamation text-xl animate-pulse"></i>
+                    </div>
+                    <span class="text-lg tracking-wide">EMITIR ALERTA S.O.S</span>
                 </button>
 
                 <!-- Footer IT -->
@@ -492,7 +538,7 @@
                         <i class="fa-solid fa-laptop-code text-imade-light"></i>
                         <span>Creado por <strong>Depto. de IT</strong></span>
                     </div>
-                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest" id="app-version-text">Versión 1.6</p>
+                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest" id="app-version-text">Versión 2.0</p>
                 </div>
             </div>
 
@@ -510,7 +556,7 @@
                     <div class="flex justify-between items-center mt-4 px-1">
                         <p class="text-xs text-gray-500 font-semibold" id="clients-count">Cargando...</p>
                         <div class="relative">
-                            <select id="sort-select" onchange="changeSort(this.value)" class="select-custom text-[11px] font-bold text-imade-dark bg-gray-50 border border-gray-200 rounded-xl pl-3 pr-7 py-2 outline-none cursor-pointer">
+                            <select id="sort-select" onchange="changeSort(this.value)" class="select-custom text-[11px] font-bold text-imade-dark bg-gray-50 border border-gray-200 rounded-xl pl-3 pr-7 py-2 outline-none cursor-pointer hover:bg-gray-100 transition-colors">
                                 <option value="distance">📍 Cercanos</option>
                                 <option value="name">🔤 A - Z</option>
                                 <option value="code">#️⃣ Código</option>
@@ -533,7 +579,6 @@
                 </div>
                 
                 <div class="flex-1 w-full relative">
-                    <!-- Mapa en el fondo -->
                     <div id="map" class="absolute inset-0"></div>
                     <div id="route-loader" class="absolute inset-0 bg-white/50 backdrop-blur-md z-[400] flex flex-col items-center justify-center hidden">
                         <div class="w-16 h-16 bg-white rounded-3xl shadow-2xl flex items-center justify-center mb-4 border border-blue-50"><div class="loader"></div></div>
@@ -544,12 +589,10 @@
                 <!-- BOTTOM SHEET DESPLEGABLE -->
                 <div id="bottom-sheet" class="glass-panel p-5 rounded-t-[32px] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] absolute bottom-0 left-0 w-full z-[500] transition-transform duration-300 ease-out translate-y-[calc(100%-160px)] flex flex-col h-[65dvh]">
                     
-                    <!-- Drag Handle Area -->
                     <div id="drag-handle" class="w-full h-10 absolute top-0 left-0 flex justify-center items-start pt-3 cursor-grab z-10" onclick="window.toggleSheet()">
                         <div class="w-12 h-1.5 bg-gray-400/50 rounded-full"></div>
                     </div>
                     
-                    <!-- Cabecera siempre visible -->
                     <div class="mt-5 mb-3 px-1 flex-shrink-0" onclick="window.toggleSheet()">
                         <div class="flex justify-between items-start mb-1">
                             <h3 id="map-client-name" class="text-xl font-black text-gray-900 leading-tight pr-4 tracking-tight">Nombre Cliente</h3>
@@ -557,13 +600,11 @@
                         </div>
                     </div>
                     
-                    <!-- Botones siempre visibles -->
                     <div class="grid grid-cols-2 gap-3 mb-4 px-1 flex-shrink-0">
-                        <button onclick="openWaze()" class="bg-[#33ccff] text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-[#33ccff]/40 hover:bg-[#00bfff] flex justify-center items-center transition-transform active:scale-95"><i class="fa-brands fa-waze text-xl mr-2"></i> Waze</button>
+                        <button onclick="openWaze()" class="bg-[#33ccff] text-white font-bold py-3 px-4 rounded-xl shadow-[0_4px_15px_rgba(51,204,255,0.4)] hover:bg-[#00bfff] flex justify-center items-center transition-transform active:scale-95"><i class="fa-brands fa-waze text-xl mr-2"></i> Waze</button>
                         <button onclick="openGoogleMaps()" class="bg-gray-100 text-gray-800 font-bold py-3 px-4 rounded-xl shadow-sm hover:bg-gray-200 flex justify-center items-center transition-transform active:scale-95 border border-gray-200"><i class="fa-solid fa-map-location-dot text-lg mr-2 text-[#34a853]"></i> Maps</button>
                     </div>
 
-                    <!-- Detalles (Visibles al desplegar) -->
                     <div id="sheet-details" class="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-gray-200/60 flex-1 overflow-y-auto opacity-0 transition-opacity duration-300 no-scrollbar">
                         <div class="space-y-3 w-full">
                             <div class="flex items-center">
@@ -624,17 +665,17 @@
                             <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Dirección Exacta</label><textarea id="reg-address" required rows="2" placeholder="Ej. 4ta Calle 2-33 Zona 1..." class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm resize-none font-bold text-gray-800"></textarea></div>
                             <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">País</label><input type="text" id="reg-pais" value="Guatemala" required class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800 shadow-inner"></div>
                         </div>
-                        <div class="pt-2"><button type="submit" id="btn-save" class="w-full bg-imade-dark text-white font-black py-4 rounded-2xl shadow-xl shadow-imade-dark/30 hover:bg-blue-900 transition-all active:scale-95 disabled:opacity-50 flex justify-center items-center"><i class="fa-solid fa-cloud-arrow-up mr-2 text-lg"></i> Guardar Cliente</button></div>
+                        <div class="pt-2"><button type="submit" id="btn-save" class="w-full bg-imade-dark text-white font-black py-4 rounded-2xl shadow-[0_10px_20px_rgba(34,56,122,0.3)] hover:bg-blue-900 transition-all active:scale-95 disabled:opacity-50 flex justify-center items-center"><i class="fa-solid fa-cloud-arrow-up mr-2 text-lg"></i> Guardar Cliente</button></div>
                     </form>
                 </div>
             </div>
 
-            <!-- PANTALLA 5: MAPA DE PILOTOS EN VIVO -->
+            <!-- PANTALLA 5: MAPA DE PILOTOS EN VIVO (CON TRAYECTORIAS Y VELOCIDAD) -->
             <div id="screen-pilots" class="screen hidden absolute inset-0 flex flex-col z-[90] bg-gray-200">
                 <div class="p-5 bg-white/95 backdrop-blur-md shadow-sm shrink-0 z-10 relative border-b border-gray-100 flex justify-between items-center">
                     <div>
                         <h2 class="text-2xl font-black text-imade-dark tracking-tight">Flota en Vivo</h2>
-                        <p class="text-xs text-gray-500 font-medium">Monitoreo satelital simultáneo</p>
+                        <p class="text-xs text-gray-500 font-medium">Trayectorias y velocidad en tiempo real</p>
                     </div>
                     <div class="w-10 h-10 bg-blue-50 text-imade-light rounded-full flex items-center justify-center shadow-inner relative">
                         <div class="absolute inset-0 border-2 border-imade-light rounded-full animate-ping opacity-50"></div>
@@ -752,7 +793,6 @@
                     }
                     deferredPrompt = null;
                 } else {
-                    // Si el navegador bloqueó el prompt nativo
                     btnInstall.classList.add('hidden');
                     installInstructions.classList.remove('hidden');
                     
@@ -783,7 +823,6 @@
             });
         }
 
-        // SW FIX: Usamos un Service Worker robusto con la inyección por BLOB mejorada
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 try {
@@ -801,9 +840,9 @@
                     const blob = new Blob([swCode], {type: 'application/javascript'});
                     const url = URL.createObjectURL(blob);
                     navigator.serviceWorker.register(url).then(reg => {
-                        console.log("Service Worker Activo y Listo para Notificaciones");
+                        console.log("Service Worker Activo");
                     }).catch(err => console.log('SW error', err));
-                } catch(e) { console.warn("SW Setup Error:", e); }
+                } catch(e) {}
             });
         }
 
@@ -815,6 +854,8 @@
         
         window.userLat = null;
         window.userLng = null;
+        window.userSpeed = 0;
+        window.myPath = [];
         
         let selectedClient = null;
         let currentSortMethod = 'distance'; 
@@ -822,21 +863,19 @@
         
         let pilotsMap = null;
         let pilotMarkers = {};
+        let pilotPolylines = {};
 
-        // === LÓGICA DE PERMISOS OBLIGATORIOS CORREGIDA ===
         window.requestAllPermissions = function() {
             if ('Notification' in window) {
                 Notification.requestPermission().then(permission => {
                     if (permission === 'granted') {
                         document.getElementById('permissions-modal').classList.add('hidden');
                         showToast("¡Listo!", "Notificaciones de S.O.S activadas.", "fa-check");
-                        
-                        // Envia notif silenciosa para instanciar en Android OS
                         if ('serviceWorker' in navigator) {
                             try {
                                 navigator.serviceWorker.getRegistrations().then(regs => {
-                                    if(regs && regs.length > 0) regs[0].showNotification("RutasApp", {body:"Permisos listos", icon: "app.jpg"}).catch(e => console.warn(e));
-                                }).catch(e => console.warn("SW getRegistrations error:", e));
+                                    if(regs && regs.length > 0) regs[0].showNotification("RutasApp", {body:"Permisos listos", icon: "https://cdn-icons-png.flaticon.com/512/854/854878.png"}).catch(e => console.warn(e));
+                                });
                             } catch(e) {}
                         }
                     } else {
@@ -867,20 +906,20 @@
         }
 
         // =========================================================================
-        // NUEVA LÓGICA DE ALARMA: VIBRACIÓN CONTINUA Y SONIDO
+        // LÓGICA DE ALARMA Y SOS MEJORADA
         // =========================================================================
         let sosInterval;
         let isSosPlaying = false;
         let audioCtx = null;
-        window.manageSOSAudio = function(anySOS) {
-            if (anySOS && !isSosPlaying) {
+        
+        window.manageSOSAudio = function(forcePlay) {
+            if (forcePlay && !isSosPlaying) {
                 isSosPlaying = true;
                 if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 if(audioCtx.state === 'suspended') audioCtx.resume();
                 
                 sosInterval = setInterval(() => {
                     try {
-                        // Sonido Web Audio API (Sobrevive más en background en iOS)
                         const osc = audioCtx.createOscillator();
                         const gain = audioCtx.createGain();
                         osc.type = 'square';
@@ -892,24 +931,100 @@
                         osc.start();
                         osc.stop(audioCtx.currentTime + 0.4);
 
-                        // VIBRACIÓN CONTINUA DE HARDWARE (Android)
-                        if (navigator.vibrate) {
-                            navigator.vibrate([400, 200]);
-                        }
+                        if (navigator.vibrate) navigator.vibrate([400, 200]);
                     } catch(e) {}
-                }, 600); // Se repite cada 600ms
-            } else if (!anySOS && isSosPlaying) {
+                }, 600);
+            } else if (!forcePlay && isSosPlaying) {
                 isSosPlaying = false;
                 clearInterval(sosInterval);
-                if (navigator.vibrate) navigator.vibrate(0); // Apagar vibración
+                if (navigator.vibrate) navigator.vibrate(0);
             }
+        };
+
+        let activeSosReason = '';
+        let countdownTimer;
+
+        // 1. Abre el menú para seleccionar motivo
+        window.openSosMenu = function() {
+            if (!window.userLat || !window.userLng) { showToast("Error", "GPS no disponible para enviar S.O.S"); return; }
+            document.getElementById('sos-reason-modal').classList.remove('hidden');
+            
+            // Asegurar que el contexto de audio se desbloquee por interacción del usuario
+            if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+        };
+
+        window.closeSosMenu = function() {
+            document.getElementById('sos-reason-modal').classList.add('hidden');
+        };
+
+        // 2. Inicia la cuenta regresiva de 5 segundos
+        window.startSosCountdown = function(reason) {
+            activeSosReason = reason;
+            document.getElementById('sos-reason-modal').classList.add('hidden');
+            
+            const countdownModal = document.getElementById('sos-countdown-modal');
+            countdownModal.classList.remove('hidden');
+            document.getElementById('sos-selected-reason').innerText = reason;
+            
+            let timeLeft = 5;
+            document.getElementById('sos-pre-timer').innerText = timeLeft;
+            
+            // Animación del círculo SVG
+            const circle = document.getElementById('countdown-circle');
+            circle.style.transition = 'none';
+            circle.style.strokeDashoffset = '0';
+            setTimeout(() => {
+                circle.style.transition = 'stroke-dashoffset 5s linear';
+                circle.style.strokeDashoffset = '283';
+            }, 50);
+
+            clearInterval(countdownTimer);
+            countdownTimer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('sos-pre-timer').innerText = timeLeft;
+                if(timeLeft <= 0) {
+                    clearInterval(countdownTimer);
+                    confirmSos();
+                }
+            }, 1000);
+        };
+
+        // 3. Cancela la alerta antes de que se envíe
+        window.cancelSosCountdown = function() {
+            clearInterval(countdownTimer);
+            document.getElementById('sos-countdown-modal').classList.add('hidden');
+            showToast("Cancelado", "Alerta S.O.S abortada.", "fa-check");
+            const circle = document.getElementById('countdown-circle');
+            circle.style.transition = 'none';
+            circle.style.strokeDashoffset = '0';
+        };
+
+        // 4. Se ejecuta si la cuenta regresiva llega a 0
+        window.confirmSos = function() {
+            document.getElementById('sos-countdown-modal').classList.add('hidden');
+            document.getElementById('sos-active-modal').classList.remove('hidden');
+            
+            // Enviar a Firebase con el motivo
+            if (window.updatePilotLocation) window.updatePilotLocation(window.userLat, window.userLng, 'SOS', activeSosReason);
+            
+            // Forzar reproducción de alarma local en el dispositivo del remitente
+            window.manageSOSAudio(true);
+        };
+
+        // 5. Apagar la alerta activa
+        window.finishSOS = function() {
+            document.getElementById('sos-active-modal').classList.add('hidden');
+            if (window.updatePilotLocation && window.userLat && window.userLng) {
+                window.updatePilotLocation(window.userLat, window.userLng, 'activo', '');
+            }
+            window.manageSOSAudio(false); // Detener audio local
+            showToast("S.O.S Finalizado", "Tu estado volvió a activo", "fa-shield-check");
         };
 
         const mockData = [
             { codigo: '169', nombre: 'Jersson Ariel Ramirez', telefono: '', direccion: 'Gualán', municipio: 'Gualán', departamento: 'Zacapa', lat: 15.115577, lng: -89.354512 },
-            { codigo: '642', nombre: 'Victoriano Sulugui', telefono: '', direccion: 'Totonicapán', municipio: 'Totonicapán', departamento: 'Totonicapán', lat: 14.826953, lng: -91.218808 },
-            { codigo: '1987', nombre: 'Corporación Cifuentes', telefono: '', direccion: 'San Francisco La Unión', municipio: 'San Francisco La Unión', departamento: 'Quetzaltenango', lat: 14.910562, lng: -91.367340 },
-            { codigo: '1076', nombre: 'Grupo Construferro', telefono: '', direccion: 'San Mateo', municipio: 'San Mateo', departamento: 'Quetzaltenango', lat: 14.864376, lng: -91.567317 }
+            { codigo: '642', nombre: 'Victoriano Sulugui', telefono: '', direccion: 'Totonicapán', municipio: 'Totonicapán', departamento: 'Totonicapán', lat: 14.826953, lng: -91.218808 }
         ];
 
         window.onload = () => {
@@ -955,7 +1070,6 @@
                 checkPermissions();
                 window.requestWakeLock();
                 
-                // Desbloquea el audio en iOS al interactuar con el botón
                 if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 if(audioCtx.state === 'suspended') audioCtx.resume();
 
@@ -1047,35 +1161,6 @@
             return R * c;
         }
 
-        let mySosInterval;
-        function triggerSOS() {
-            if (!window.userLat || !window.userLng) { showToast("Error", "GPS no disponible para S.O.S"); return; }
-            
-            if (window.updatePilotLocation) window.updatePilotLocation(window.userLat, window.userLng, 'SOS');
-            
-            document.getElementById('sos-active-modal').classList.remove('hidden');
-            let timeLeft = 30;
-            document.getElementById('sos-timer').innerText = timeLeft;
-            
-            clearInterval(mySosInterval);
-            mySosInterval = setInterval(() => {
-                timeLeft--;
-                document.getElementById('sos-timer').innerText = timeLeft;
-                if(timeLeft <= 0) {
-                    cancelSOS();
-                }
-            }, 1000);
-        }
-
-        function cancelSOS() {
-            clearInterval(mySosInterval);
-            document.getElementById('sos-active-modal').classList.add('hidden');
-            if (window.updatePilotLocation && window.userLat && window.userLng) {
-                window.updatePilotLocation(window.userLat, window.userLng, 'activo');
-            }
-            showToast("S.O.S Finalizado", "Tu estado volvió a activo", "fa-check-circle");
-        }
-
         function closeMap() {
             document.getElementById('screen-map').classList.add('hidden');
             document.getElementById('screen-search').classList.remove('hidden');
@@ -1098,12 +1183,21 @@
                         window.userLat = position.coords.latitude;
                         window.userLng = position.coords.longitude;
                         
+                        // Calcular y guardar velocidad
+                        let speedMps = position.coords.speed || 0;
+                        window.userSpeed = Math.round(speedMps * 3.6); // M/s to Km/h
+                        document.getElementById('home-speed').innerText = `${window.userSpeed} km/h`;
+
+                        // Guardar trayectoria (Path)
+                        window.myPath.push([window.userLat, window.userLng]);
+                        if(window.myPath.length > 20) window.myPath.shift(); // Mantener solo últimos 20 puntos
+                        
                         const homeStatus = document.getElementById('home-gps-status');
                         const homeIcon = document.getElementById('home-gps-icon');
                         if (homeStatus && homeIcon) {
                             homeStatus.innerHTML = `<span class="text-green-600">Activo</span>`;
                             homeStatus.className = `text-[11px] font-bold text-gray-800`;
-                            homeIcon.className = `w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors bg-green-50 text-green-500`;
+                            homeIcon.className = `w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors bg-green-50 text-green-500 z-10`;
                             homeIcon.innerHTML = `<i class="fa-solid fa-satellite-dish text-sm"></i>`;
                         }
 
@@ -1115,7 +1209,7 @@
                         }
 
                         if(window.updatePilotLocation && document.getElementById('sos-active-modal').classList.contains('hidden')){
-                            window.updatePilotLocation(window.userLat, window.userLng, 'activo');
+                            window.updatePilotLocation(window.userLat, window.userLng, 'activo', '');
                         }
 
                         if (window.renderPilotsMap && !document.getElementById('screen-pilots').classList.contains('hidden')) {
@@ -1136,7 +1230,7 @@
                         const homeIcon = document.getElementById('home-gps-icon');
                         if (homeStatus && homeIcon) {
                             homeStatus.innerHTML = `<span class="text-red-500">Apagado</span>`;
-                            homeIcon.className = "w-8 h-8 rounded-xl bg-red-50 text-red-500 flex items-center justify-center shrink-0";
+                            homeIcon.className = "w-8 h-8 rounded-xl bg-red-50 text-red-500 flex items-center justify-center shrink-0 z-10";
                             homeIcon.innerHTML = `<i class="fa-solid fa-location-crosshairs text-sm"></i>`;
                         }
                         
@@ -1155,6 +1249,9 @@
             }
         }
 
+        // =========================================================================
+        // MAPA DE FLOTA MEJORADO (TRAYECTORIAS Y VELOCIDAD)
+        // =========================================================================
         window.renderPilotsMap = function(pilots = []) {
             let startLat = window.userLat || 14.6349;
             let startLng = window.userLng || -90.5069;
@@ -1176,15 +1273,22 @@
                     name: (localStorage.getItem('imade_pilot_name') || "Piloto") + " (Tú)",
                     lat: window.userLat,
                     lng: window.userLng,
+                    speed: window.userSpeed || 0,
+                    path: window.myPath || [],
                     status: isMySos ? 'SOS' : 'activo'
                 });
             }
             
+            // Cleanup markers/paths that are no longer active
             const currentIds = displayPilots.map(p => p.id);
             for (const id in pilotMarkers) {
                 if (!currentIds.includes(id)) {
                     pilotsMap.removeLayer(pilotMarkers[id]);
                     delete pilotMarkers[id];
+                    if (pilotPolylines[id]) {
+                        pilotsMap.removeLayer(pilotPolylines[id]);
+                        delete pilotPolylines[id];
+                    }
                 }
             }
 
@@ -1192,20 +1296,37 @@
                 if (pilot.status === 'inactivo' || pilot.lat === 0) return; 
 
                 const isSOS = pilot.status === 'SOS';
-                const color = isSOS ? '#ef4444' : '#36a8e1';
+                const baseColor = isSOS ? '#ef4444' : '#36a8e1';
                 const pulseClass = isSOS ? 'sos-danger-blink' : '';
                 const iconCls = isSOS ? 'fa-triangle-exclamation' : 'fa-truck-fast';
+                const speed = pilot.speed || 0;
 
+                // Dibujar Trayectoria (Path)
+                if (pilot.path && pilot.path.length > 1) {
+                    if (pilotPolylines[pilot.id]) {
+                        pilotPolylines[pilot.id].setLatLngs(pilot.path);
+                    } else {
+                        pilotPolylines[pilot.id] = L.polyline(pilot.path, {
+                            color: baseColor,
+                            weight: 4,
+                            opacity: 0.6,
+                            dashArray: isSOS ? '10, 10' : ''
+                        }).addTo(pilotsMap);
+                    }
+                }
+
+                // Dibujar Marcador (Mejorado con Velocidad)
                 const iconHtml = `
-                    <div class="${pulseClass}" style='background-color:${color}; width:30px; height:30px; border-radius:50%; border:3px solid white; box-shadow:0 4px 10px rgba(0,0,0,0.4); display:flex; justify-content:center; align-items:center; transition: all 0.3s;'>
-                        <i class='fa-solid ${iconCls}' style='color:white; font-size:12px;'></i>
+                    <div class="${pulseClass}" style='background-color:${baseColor}; width:32px; height:32px; border-radius:50%; border:3px solid white; box-shadow:0 5px 15px rgba(0,0,0,0.3); display:flex; justify-content:center; align-items:center; transition: all 0.3s; position:relative; z-index: 1000;'>
+                        <i class='fa-solid ${iconCls}' style='color:white; font-size:13px;'></i>
                     </div>
-                    <div style="background: white; font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 10px; margin-top: 5px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.15); white-space: nowrap; transform: translateX(-25%); border: 1px solid #f1f5f9; color: #1e293b; position:relative; z-index:999;">
-                        ${pilot.name} ${isSOS ? '<span style="color:red; animation: ping 1s infinite;">🚨</span>' : ''}
+                    <div style="background: rgba(255,255,255,0.95); backdrop-filter: blur(4px); font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 12px; margin-top: 6px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); white-space: nowrap; transform: translateX(-35%); border: 1px solid #e2e8f0; color: #1e293b; position:relative; z-index:999; display: flex; flex-direction: column; align-items: center; line-height: 1.2;">
+                        <span>${pilot.name} ${isSOS ? '<span style="color:red; animation: ping 1s infinite;">🚨</span>' : ''}</span>
+                        <span style="color: #64748b; font-size: 9px; font-weight: 700; margin-top: 1px;">${speed} km/h</span>
                     </div>
                 `;
 
-                const icon = L.divIcon({ className: 'custom-div-icon', html: iconHtml, iconSize: [30, 30], iconAnchor: [15, 15] });
+                const icon = L.divIcon({ className: 'custom-div-icon', html: iconHtml, iconSize: [32, 32], iconAnchor: [16, 16] });
 
                 if (pilotMarkers[pilot.id]) {
                     pilotMarkers[pilot.id].setLatLng([pilot.lat, pilot.lng]);
