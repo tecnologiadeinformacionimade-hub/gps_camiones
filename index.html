@@ -16,8 +16,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RutasApp">
-    <!-- Manifest codificado -->
-    <link rel="manifest" href='data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22RutasApp%20Grupo%20Imade%22%2C%22short_name%22%3A%22RutasApp%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f8fafc%22%2C%22theme_color%22%3A%22%2322387a%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F854%2F854878.png%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%2C%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F854%2F854878.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D'>
+    <!-- Manifest codificado referenciando app.jpg -->
+    <link rel="manifest" href='data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22RutasApp%20Grupo%20Imade%22%2C%22short_name%22%3A%22RutasApp%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f8fafc%22%2C%22theme_color%22%3A%22%2322387a%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22app.jpg%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fjpeg%22%7D%2C%7B%22src%22%3A%22app.jpg%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fjpeg%22%7D%5D%7D'>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -92,15 +92,15 @@
         .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
         
         /* Animación agresiva para SOS */
-        @keyframes sosBlink { 0%, 100% { background-color: #ef4444; transform: scale(1); } 50% { background-color: #991b1b; transform: scale(1.2); } }
-        .sos-danger-blink { animation: sosBlink 0.4s infinite; border: 4px solid white !important; }
+        @keyframes sosBlink { 0%, 100% { background-color: #ef4444; transform: scale(1); } 50% { background-color: #991b1b; transform: scale(1.1); } }
+        .sos-danger-blink { animation: sosBlink 0.4s infinite; border: 3px solid white !important; }
     </style>
 
     <script>
         // =====================================================================
-        // SITEMA DE AUTO-ACTUALIZACIÓN PARA PWAs (VERSIÓN 1.6)
+        // SITEMA DE AUTO-ACTUALIZACIÓN PARA PWAs (VERSIÓN 1.0.10)
         // =====================================================================
-        const APP_VERSION = "1.6"; // <-- Versión 1.6: Alarma agresiva en background simulado
+        const APP_VERSION = "1.0.10"; 
         const currentVersion = localStorage.getItem('imade_app_version');
         
         if (currentVersion !== APP_VERSION) {
@@ -126,11 +126,17 @@
 </head>
 <body class="text-gray-800 antialiased h-[100dvh] w-full overflow-hidden flex justify-center bg-gray-100">
 
+    <!-- AUDIO HACK PARA MANTENER LA APP EN SEGUNDO PLANO (WAKE LOCK SEGUNDO PLANO) -->
+    <!-- Este es un MP3 de 1 segundo de silencio total, en bucle -->
+    <audio id="background-audio" loop playsinline preload="auto">
+        <source src="data:audio/mp3;base64,//OExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq" type="audio/mpeg">
+    </audio>
+
     <!-- PANTALLA DE INSTALACIÓN OBLIGATORIA (PWA) -->
     <div id="install-screen" class="fixed inset-0 z-[99999] bg-white flex flex-col items-center justify-center p-6 text-center hidden">
         <img src="app.jpg" alt="RutasApp" class="w-32 h-32 rounded-3xl shadow-2xl mb-6 object-cover" onerror="this.src='https://cdn-icons-png.flaticon.com/512/854/854878.png'">
         <h2 class="text-3xl font-black text-imade-dark mb-3">Instala RutasApp</h2>
-        <p class="text-gray-500 mb-8 font-medium px-4 leading-relaxed text-sm">Para continuar y garantizar que el GPS funcione en tiempo real, instala la aplicación dando clic en el botón de abajo.</p>
+        <p class="text-gray-500 mb-8 font-medium px-4 leading-relaxed text-sm">Para continuar y garantizar que el GPS funcione en tiempo real (Versión 1.0.10), instala la aplicación dando clic en el botón de abajo.</p>
         
         <button id="btn-install" class="w-full max-w-xs bg-imade-light text-white font-black py-4 rounded-2xl shadow-[0_10px_20px_rgba(54,168,225,0.3)] active:scale-95 transition-transform text-lg flex items-center justify-center">
             <i class="fa-solid fa-download mr-3"></i> Instalar Ahora
@@ -169,29 +175,69 @@
                 <i class="fa-solid fa-bell text-4xl text-imade-light animate-bounce"></i>
             </div>
             <h3 class="text-xl font-black text-gray-900 mb-2 tracking-tight">Permisos Requeridos</h3>
-            <p class="text-gray-500 text-sm mb-6 font-medium">Para recibir alertas de S.O.S. de tus compañeros y garantizar tu seguridad, debes permitir que RutasApp te envíe notificaciones.</p>
+            <p class="text-gray-500 text-sm mb-6 font-medium">Para recibir alertas de S.O.S. de tus compañeros y mantener el GPS activo, debes permitir que RutasApp te envíe notificaciones.</p>
             <button onclick="requestAllPermissions()" class="w-full bg-imade-dark text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-transform flex items-center justify-center">
                 <i class="fa-solid fa-check-double mr-2"></i> Aceptar y Activar
             </button>
         </div>
     </div>
 
-    <!-- PANTALLA DE S.O.S ACTIVO (Para quien lo INICIA) -->
-    <div id="sos-active-modal" class="fixed inset-0 bg-red-900/95 z-[99990] hidden flex-col items-center justify-center backdrop-blur-md px-6 text-center">
-        <div class="w-32 h-32 bg-red-500 rounded-full flex items-center justify-center mb-6 animate-pulse shadow-[0_0_50px_rgba(239,68,68,0.6)]">
-            <i class="fa-solid fa-triangle-exclamation text-6xl text-white"></i>
+    <!-- ============================================== -->
+    <!-- NUEVAS PANTALLAS DE S.O.S (OPCIONES Y CONTADOR) -->
+    <!-- ============================================== -->
+    
+    <!-- 1. MODAL OPCIONES DE S.O.S -->
+    <div id="sos-options-modal" class="fixed inset-0 bg-gray-900/95 z-[99990] hidden flex-col items-center justify-center backdrop-blur-md px-4 py-8">
+        <div class="w-full max-w-sm bg-white rounded-[32px] p-6 shadow-2xl flex flex-col items-center modal-fade relative">
+            <button onclick="closeSosOptions()" class="absolute top-4 right-4 w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 active:scale-90"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-4"><i class="fa-solid fa-triangle-exclamation text-3xl"></i></div>
+            <h2 class="text-2xl font-black text-gray-900 mb-1">Motivo de Alerta</h2>
+            <p class="text-gray-500 text-sm mb-6 text-center">Selecciona la emergencia que presentas:</p>
+            
+            <div class="w-full grid grid-cols-2 gap-3">
+                <button onclick="startSosCountdown('Sin Gasolina')" class="bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 font-bold py-4 rounded-2xl flex flex-col items-center gap-2 active:scale-95 transition-all"><i class="fa-solid fa-gas-pump text-2xl"></i> <span class="text-xs">Sin Gasolina</span></button>
+                <button onclick="startSosCountdown('Choque')" class="bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold py-4 rounded-2xl flex flex-col items-center gap-2 active:scale-95 transition-all"><i class="fa-solid fa-car-burst text-2xl"></i> <span class="text-xs">Choque</span></button>
+                <button onclick="startSosCountdown('Robo o Asalto')" class="bg-slate-800 hover:bg-slate-900 border border-slate-700 text-white font-bold py-4 rounded-2xl flex flex-col items-center gap-2 active:scale-95 transition-all"><i class="fa-solid fa-mask text-2xl"></i> <span class="text-xs">Robo / Asalto</span></button>
+                <button onclick="startSosCountdown('Falla Mecánica')" class="bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 text-yellow-700 font-bold py-4 rounded-2xl flex flex-col items-center gap-2 active:scale-95 transition-all"><i class="fa-solid fa-screwdriver-wrench text-2xl"></i> <span class="text-xs">Mecánica</span></button>
+                <button onclick="startSosCountdown('Emergencia Médica')" class="bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-bold py-4 rounded-2xl flex flex-col items-center gap-2 active:scale-95 transition-all"><i class="fa-solid fa-truck-medical text-2xl"></i> <span class="text-xs">Médica</span></button>
+                <button onclick="startSosCountdown('Otra Emergencia')" class="bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 font-bold py-4 rounded-2xl flex flex-col items-center gap-2 active:scale-95 transition-all"><i class="fa-solid fa-circle-exclamation text-2xl"></i> <span class="text-xs">Otro Motivo</span></button>
+            </div>
         </div>
-        <h2 class="text-3xl font-black text-white mb-2 tracking-tight">S.O.S ACTIVO</h2>
-        <p class="text-red-200 text-sm font-medium mb-8">Tu alerta de emergencia está sonando en toda la flota y tu ubicación está parpadeando en el mapa.</p>
+    </div>
+
+    <!-- 2. MODAL CONTADOR DE S.O.S -->
+    <div id="sos-countdown-modal" class="fixed inset-0 bg-red-600/95 z-[99991] hidden flex-col items-center justify-center backdrop-blur-md px-6 text-center">
+        <h2 class="text-3xl font-black text-white mb-2 tracking-tight drop-shadow-md">¿Estás seguro?</h2>
+        <p class="text-red-100 text-lg font-medium mb-8">Enviando alerta por: <strong id="sos-motivo-texto" class="text-white bg-red-800 px-3 py-1 rounded-lg">Choque</strong></p>
         
-        <div class="text-7xl font-black text-white mb-10 drop-shadow-lg font-mono" id="sos-timer">30</div>
+        <!-- Círculo contador -->
+        <div class="relative w-48 h-48 mb-10 flex items-center justify-center">
+            <svg class="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="8"></circle>
+                <circle id="countdown-circle" cx="50" cy="50" r="45" fill="none" stroke="white" stroke-width="8" stroke-dasharray="283" stroke-dashoffset="0" style="transition: stroke-dashoffset 1s linear;"></circle>
+            </svg>
+            <div class="text-7xl font-black text-white drop-shadow-lg font-mono" id="sos-pre-timer">5</div>
+        </div>
         
-        <button onclick="cancelSOS()" class="w-full max-w-xs bg-white text-red-600 font-black py-4 rounded-full shadow-2xl active:scale-95 transition-transform text-lg border border-red-100">
-            Desactivar Alerta
+        <button onclick="cancelSosCountdown()" class="w-full max-w-xs bg-white text-red-600 font-black py-4 rounded-full shadow-2xl active:scale-95 transition-transform text-xl border-4 border-red-200">
+            <i class="fa-solid fa-ban mr-2"></i> Cancelar Alerta
         </button>
     </div>
 
-    <!-- ANUNCIO S.O.S RECIBIDO (MEDIA PANTALLA) PARA ANDROID/IOS FALLBACK -->
+    <!-- 3. PANTALLA DE S.O.S ACTIVO (Alerta disparada) -->
+    <div id="sos-active-modal" class="fixed inset-0 bg-red-900/95 z-[99990] hidden flex-col items-center justify-center backdrop-blur-md px-6 text-center">
+        <div class="w-32 h-32 bg-red-500 rounded-full flex items-center justify-center mb-6 animate-pulse shadow-[0_0_50px_rgba(239,68,68,0.6)]">
+            <i class="fa-solid fa-satellite-dish text-6xl text-white"></i>
+        </div>
+        <h2 class="text-3xl font-black text-white mb-2 tracking-tight">ALERTA ENVIADA</h2>
+        <p class="text-red-200 text-sm font-medium mb-8">La flota y administración han recibido un correo y notificación con tu ubicación y motivo.</p>
+        <div class="text-5xl font-black text-white mb-10 drop-shadow-lg font-mono" id="sos-active-timer">00:00</div>
+        <button onclick="deactivateSOS()" class="w-full max-w-xs bg-white text-red-600 font-black py-4 rounded-full shadow-2xl active:scale-95 transition-transform text-lg border border-red-100">
+            Resolver / Apagar Alerta
+        </button>
+    </div>
+
+    <!-- ANUNCIO S.O.S RECIBIDO (MEDIA PANTALLA) PARA OTROS PILOTOS -->
     <div id="sos-receive-modal" class="fixed inset-x-0 top-0 h-[50dvh] bg-red-600/95 backdrop-blur-xl z-[99996] hidden flex flex-col items-center justify-center p-6 text-center shadow-[0_20px_50px_rgba(220,38,38,0.5)] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] -translate-y-full rounded-b-[40px] border-b-4 border-red-400">
         <button onclick="dismissSosBanner()" class="absolute top-8 right-6 w-12 h-12 bg-black/20 rounded-full text-white flex items-center justify-center hover:bg-black/40 transition-colors active:scale-90">
             <i class="fa-solid fa-xmark text-2xl"></i>
@@ -200,7 +246,7 @@
             <div class="absolute inset-0 border-4 border-white rounded-full animate-ping opacity-50"></div>
             <i class="fa-solid fa-triangle-exclamation text-5xl"></i>
         </div>
-        <h2 class="text-3xl font-black text-white mb-3 tracking-tight drop-shadow-md">¡ALERTA S.O.S!</h2>
+        <h2 class="text-3xl font-black text-white mb-3 tracking-tight drop-shadow-md">¡ALERTA EN FLOTA!</h2>
         <p id="sos-receive-text" class="text-red-100 text-base font-medium leading-relaxed max-w-xs mx-auto drop-shadow-sm">Un compañero necesita ayuda.</p>
         <p class="text-white/60 text-xs mt-6"><i class="fa-solid fa-volume-high mr-1"></i> La alarma y vibración continúan</p>
     </div>
@@ -256,17 +302,18 @@
                     window.currentUser = user;
                     window.startPilotsListener();
                     if (window.userLat && window.userLng) {
-                        window.updatePilotLocation(window.userLat, window.userLng, 'activo');
+                        window.updatePilotLocation(window.userLat, window.userLng, window.userSpeed || 0, 'activo', '');
                     }
                 }
             });
 
-            window.updatePilotLocation = async (lat, lng, status) => {
+            // AHORA ENVÍA TAMBIÉN LA VELOCIDAD Y EL MOTIVO DEL S.O.S
+            window.updatePilotLocation = async (lat, lng, speed, status, motivo) => {
                 if(!window.currentUser || !window.firebaseDb) return;
                 try {
                     const pilotRef = doc(window.firebaseDb, 'artifacts', window.firebaseAppId, 'public', 'data', 'pilotos', window.currentUser.uid);
                     await setDoc(pilotRef, {
-                        lat, lng, status,
+                        lat, lng, status, speed, motivo,
                         name: localStorage.getItem('imade_pilot_name') || "Piloto Anónimo",
                         timestamp: Date.now()
                     });
@@ -275,7 +322,7 @@
                 }
             };
 
-            // Función para ocultar el anuncio de SOS manualmente (El sonido no se apaga aquí)
+            // Función para ocultar el anuncio de SOS manualmente
             window.dismissSosBanner = function() {
                 const sosBanner = document.getElementById('sos-receive-modal');
                 sosBanner.classList.remove('translate-y-0');
@@ -319,11 +366,9 @@
                     // LÓGICA AGRESIVA DE NOTIFICACIONES Y ANUNCIO S.O.S
                     if (anySOS && !window.wasSosActive && activeSosPilots.length > 0) {
                         let sosPilot = activeSosPilots[0];
-                        let dist = window.calculateDistance ? window.calculateDistance(window.userLat, window.userLng, sosPilot.lat, sosPilot.lng) : null;
-                        let distStr = dist ? dist.toFixed(1) + ' km' : 'distancia desconocida';
+                        let mot = sosPilot.motivo ? `(${sosPilot.motivo})` : '';
                         
-                        // 1. Mostrar el Banner Visual Interno (Media Pantalla)
-                        document.getElementById('sos-receive-text').innerHTML = `El piloto <strong>${sosPilot.name}</strong> solicita apoyo urgente a <strong>${distStr}</strong>.`;
+                        document.getElementById('sos-receive-text').innerHTML = `El piloto <strong>${sosPilot.name}</strong> reporta <strong>emergencia ${mot}</strong> a una velocidad de ${sosPilot.speed || 0} km/h.`;
                         const sosBanner = document.getElementById('sos-receive-modal');
                         sosBanner.classList.remove('hidden');
                         requestAnimationFrame(() => {
@@ -333,18 +378,18 @@
                             });
                         });
 
-                        // 2. Intentar despertar la pantalla manteniendo el WakeLock activo
+                        // Intentar despertar la pantalla
                         if (window.requestWakeLock) window.requestWakeLock();
 
-                        // 3. Notificación OS Push (Usando Tag y Renotify para forzar que vuelva a sonar en Android)
-                        const notifTitle = "🚨 ALERTA S.O.S 🚨";
+                        // Notificación OS Push
+                        const notifTitle = "🚨 ALERTA S.O.S " + mot;
                         const notifOptions = {
-                            body: `URGENTE: ${sosPilot.name} solicita apoyo a ${distStr}.`,
-                            icon: "https://cdn-icons-png.flaticon.com/512/854/854878.png",
-                            badge: "https://cdn-icons-png.flaticon.com/512/854/854878.png",
+                            body: `URGENTE: ${sosPilot.name} solicita apoyo.`,
+                            icon: "app.jpg",
+                            badge: "app.jpg",
                             vibrate: [500, 250, 500, 250, 1000, 250, 500, 250, 500],
                             requireInteraction: true,
-                            tag: 'sos-alert', // El TAG y RENOTIFY hacen que Android no agrupe en silencio
+                            tag: 'sos-alert',
                             renotify: true
                         };
 
@@ -361,9 +406,7 @@
                                 } else {
                                     new Notification(notifTitle, notifOptions);
                                 }
-                            } catch(e) {
-                                console.log("Notif error", e);
-                            }
+                            } catch(e) {}
                         }
                     }
                     window.wasSosActive = anySOS;
@@ -375,14 +418,13 @@
 
             window.addEventListener("beforeunload", () => {
                 if(window.updatePilotLocation && window.userLat && window.userLng) {
-                    window.updatePilotLocation(window.userLat, window.userLng, 'inactivo');
+                    window.updatePilotLocation(window.userLat, window.userLng, 0, 'inactivo', '');
                 }
             });
             
             document.addEventListener("visibilitychange", () => {
                 if (document.visibilityState === 'visible') {
                     if(window.requestWakeLock) window.requestWakeLock();
-                    // Si se abrió la app y hay SOS, asegurar que suena/vibra
                     if(window.wasSosActive && window.manageSOSAudio) {
                         window.manageSOSAudio(true);
                     }
@@ -390,8 +432,8 @@
             });
 
         } else {
-            window.updatePilotLocation = async (lat, lng, status) => { /* Silencioso */ };
-            window.startPilotsListener = () => { /* Fallback */ };
+            window.updatePilotLocation = async () => {};
+            window.startPilotsListener = () => {};
         }
     </script>
 
@@ -420,7 +462,7 @@
             <div id="screen-home" class="screen w-full h-full flex flex-col px-5 py-3 overflow-hidden">
                 
                 <div class="flex flex-col items-center justify-center mt-1 mb-3">
-                    <img src="logo.png" alt="Grupo Imade" class="h-16 object-contain mb-3 filter drop-shadow-sm">
+                    <img src="app.jpg" alt="Grupo Imade" class="h-16 w-16 rounded-2xl object-cover mb-3 shadow-md border border-gray-200" onerror="this.src='https://cdn-icons-png.flaticon.com/512/854/854878.png'">
                     <h2 class="text-2xl font-black text-imade-dark text-center tracking-tight">¡Bienvenido!</h2>
                 </div>
                 
@@ -442,19 +484,17 @@
                     </div>
                 </div>
 
-                <!-- Estados Divididos: GPS y Piloto -->
+                <!-- Estados Divididos: GPS (Velocidad) y Piloto -->
                 <div class="grid grid-cols-2 gap-3 mb-4">
-                    <!-- Satelital -->
                     <div class="bg-white rounded-3xl p-3 shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center gap-1.5 transition-colors">
                         <div id="home-gps-icon" class="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 transition-colors">
                             <i class="fa-solid fa-satellite-dish text-sm animate-pulse"></i>
                         </div>
                         <div>
-                            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Satelital</p>
+                            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Velocidad</p>
                             <p id="home-gps-status" class="text-[11px] font-bold text-gray-600 leading-tight">Buscando...</p>
                         </div>
                     </div>
-                    <!-- Piloto -->
                     <div class="bg-white rounded-3xl p-3 shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center gap-1.5 transition-colors">
                         <div id="home-pilot-icon" class="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 transition-colors">
                             <i class="fa-solid fa-user-astronaut text-sm"></i>
@@ -466,8 +506,8 @@
                     </div>
                 </div>
 
-                <!-- BOTÓN S.O.S -->
-                <button onclick="triggerSOS()" class="w-full bg-red-500 text-white font-black py-3.5 rounded-3xl shadow-xl shadow-red-500/30 hover:bg-red-600 transition-all active:scale-95 flex justify-center items-center border border-red-400 overflow-hidden relative group">
+                <!-- BOTÓN S.O.S QUE ABRE OPCIONES -->
+                <button onclick="openSosOptions()" class="w-full bg-red-500 text-white font-black py-3.5 rounded-3xl shadow-xl shadow-red-500/30 hover:bg-red-600 transition-all active:scale-95 flex justify-center items-center border border-red-400 overflow-hidden relative group">
                     <div class="absolute inset-0 bg-white/20 w-full h-full transform -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
                     <i class="fa-solid fa-triangle-exclamation mr-2 text-xl animate-pulse"></i> EMITIR ALERTA S.O.S
                 </button>
@@ -478,7 +518,7 @@
                         <i class="fa-solid fa-laptop-code text-imade-light"></i>
                         <span>Creado por <strong>Depto. de IT</strong></span>
                     </div>
-                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest" id="app-version-text">Versión 1.6</p>
+                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest" id="app-version-text">Versión 1.0.10</p>
                 </div>
             </div>
 
@@ -608,7 +648,7 @@
                             <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Departamento</label><input type="text" id="reg-depto" required placeholder="Ej. Guatemala" class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800"></div>
                             <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Municipio</label><input type="text" id="reg-muni" required placeholder="Ej. Mixco" class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800"></div>
                             <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Dirección Exacta</label><textarea id="reg-address" required rows="2" placeholder="Ej. 4ta Calle 2-33 Zona 1..." class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm resize-none font-bold text-gray-800"></textarea></div>
-                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">País</label><input type="text" id="reg-pais" value="Guatemala" required class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800 shadow-inner"></div>
+                            <div><label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 ml-1">País</label><input type="text" id="reg-pais" value="Guatemala" required class="w-full px-4 py-4 bg-gray-50 rounded-2xl border border-transparent focus:bg-white focus:border-imade-light focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm font-bold text-gray-800 shadow-inner hidden"></div>
                         </div>
                         <div class="pt-2"><button type="submit" id="btn-save" class="w-full bg-imade-dark text-white font-black py-4 rounded-2xl shadow-xl shadow-imade-dark/30 hover:bg-blue-900 transition-all active:scale-95 disabled:opacity-50 flex justify-center items-center"><i class="fa-solid fa-cloud-arrow-up mr-2 text-lg"></i> Guardar Cliente</button></div>
                     </form>
@@ -707,7 +747,12 @@
     <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
     <script>
-        // PWA setup y bypass de instalación
+        // CONFIGURA AQUÍ TU URL DE GOOGLE APPS SCRIPT
+        const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzbyjPISFC8bYmv1McsPFUjGqual-O2E-p29DyOr2T2L02jsT5fKpAUR_n_dEtO4DXH/exec";
+        
+        // =========================================================================
+        // PWA SETUP Y BYPASS DE INSTALACIÓN
+        // =========================================================================
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
         let deferredPrompt;
         const btnInstall = document.getElementById('btn-install');
@@ -738,10 +783,8 @@
                     }
                     deferredPrompt = null;
                 } else {
-                    // Si el navegador bloqueó el prompt nativo
                     btnInstall.classList.add('hidden');
                     installInstructions.classList.remove('hidden');
-                    
                     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
                     if (isIOS) {
                         appleInstructions.classList.remove('hidden');
@@ -769,7 +812,7 @@
             });
         }
 
-        // SW FIX: Usamos un Service Worker robusto con la inyección por BLOB mejorada
+        // SW FIX: Service Worker robusto con la inyección por BLOB mejorada
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 try {
@@ -793,45 +836,51 @@
             });
         }
 
-        const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzbyjPISFC8bYmv1McsPFUjGqual-O2E-p29DyOr2T2L02jsT5fKpAUR_n_dEtO4DXH/exec";
-        
+        // =========================================================================
+        // VARIABLES GLOBALES
+        // =========================================================================
         let clients = [];
-        let map = null;
+        let map = null, pilotsMap = null;
         let routingControl = null;
+        let pilotMarkers = {};
+        window.pilotTrails = {};     // Historial de coordenadas: { id: [[lat, lng], [lat, lng]] }
+        window.pilotPolylines = {};  // Líneas dibujadas en el mapa: { id: L.polyline }
         
         window.userLat = null;
         window.userLng = null;
+        window.userSpeed = 0; // Velocidad en km/h
         
         let selectedClient = null;
         let currentSortMethod = 'distance'; 
         let gpsAlertShown = false;
         
-        let pilotsMap = null;
-        let pilotMarkers = {};
+        let sosCountdownInterval;
+        let activeSosTimerInterval;
+        let currentSosMotivo = "";
 
-        // === LÓGICA DE PERMISOS OBLIGATORIOS CORREGIDA ===
+        // =========================================================================
+        // PERMISOS Y WAKE LOCK (SEGUNDO PLANO)
+        // =========================================================================
         window.requestAllPermissions = function() {
             if ('Notification' in window) {
                 Notification.requestPermission().then(permission => {
                     if (permission === 'granted') {
                         document.getElementById('permissions-modal').classList.add('hidden');
-                        showToast("¡Listo!", "Notificaciones de S.O.S activadas.", "fa-check");
-                        
-                        // Envia notif silenciosa para instanciar en Android OS
+                        showToast("¡Listo!", "Notificaciones activadas.", "fa-check");
                         if ('serviceWorker' in navigator) {
                             try {
                                 navigator.serviceWorker.getRegistrations().then(regs => {
-                                    if(regs && regs.length > 0) regs[0].showNotification("RutasApp", {body:"Permisos listos", icon: "https://cdn-icons-png.flaticon.com/512/854/854878.png"}).catch(e => console.warn(e));
+                                    if(regs && regs.length > 0) regs[0].showNotification("RutasApp", {body:"Permisos listos", icon: "app.jpg"}).catch(e => console.warn(e));
                                 }).catch(e => console.warn("SW getRegistrations error:", e));
                             } catch(e) {}
                         }
                     } else {
-                        alert("⚠️ ACCIÓN REQUERIDA: Has denegado las notificaciones. Para tu seguridad y la de la flota, ve a la configuración de tu navegador o celular y ACTIVA las notificaciones para esta app.");
+                        alert("⚠️ ACCIÓN REQUERIDA: Has denegado las notificaciones. Para tu seguridad y la de la flota, ve a la configuración y ACTIVA las notificaciones.");
                         document.getElementById('permissions-modal').classList.add('hidden');
                     }
                 });
             } else {
-                alert("Tu dispositivo no soporta notificaciones nativas (Asegurate de estar en la app instalada y no en Safari).");
+                alert("Tu dispositivo no soporta notificaciones nativas.");
                 document.getElementById('permissions-modal').classList.add('hidden');
             }
             requestLocation();
@@ -853,7 +902,7 @@
         }
 
         // =========================================================================
-        // NUEVA LÓGICA DE ALARMA: VIBRACIÓN CONTINUA Y SONIDO
+        // AUDIO & VIBRACIÓN DE S.O.S
         // =========================================================================
         let sosInterval;
         let isSosPlaying = false;
@@ -866,7 +915,6 @@
                 
                 sosInterval = setInterval(() => {
                     try {
-                        // Sonido Web Audio API (Sobrevive más en background en iOS)
                         const osc = audioCtx.createOscillator();
                         const gain = audioCtx.createGain();
                         osc.type = 'square';
@@ -878,26 +926,19 @@
                         osc.start();
                         osc.stop(audioCtx.currentTime + 0.4);
 
-                        // VIBRACIÓN CONTINUA DE HARDWARE (Android)
-                        if (navigator.vibrate) {
-                            navigator.vibrate([400, 200]);
-                        }
+                        if (navigator.vibrate) navigator.vibrate([400, 200]);
                     } catch(e) {}
-                }, 600); // Se repite cada 600ms
+                }, 600); 
             } else if (!anySOS && isSosPlaying) {
                 isSosPlaying = false;
                 clearInterval(sosInterval);
-                if (navigator.vibrate) navigator.vibrate(0); // Apagar vibración
+                if (navigator.vibrate) navigator.vibrate(0); 
             }
         };
 
-        const mockData = [
-            { codigo: '169', nombre: 'Jersson Ariel Ramirez', telefono: '', direccion: 'Gualán', municipio: 'Gualán', departamento: 'Zacapa', lat: 15.115577, lng: -89.354512 },
-            { codigo: '642', nombre: 'Victoriano Sulugui', telefono: '', direccion: 'Totonicapán', municipio: 'Totonicapán', departamento: 'Totonicapán', lat: 14.826953, lng: -91.218808 },
-            { codigo: '1987', nombre: 'Corporación Cifuentes', telefono: '', direccion: 'San Francisco La Unión', municipio: 'San Francisco La Unión', departamento: 'Quetzaltenango', lat: 14.910562, lng: -91.367340 },
-            { codigo: '1076', nombre: 'Grupo Construferro', telefono: '', direccion: 'San Mateo', municipio: 'San Mateo', departamento: 'Quetzaltenango', lat: 14.864376, lng: -91.567317 }
-        ];
-
+        // =========================================================================
+        // INICIO DE LA APLICACIÓN
+        // =========================================================================
         window.onload = () => {
             loadClients();
             requestLocation();
@@ -905,6 +946,7 @@
             setupSearchInput();
             checkPilotIdentity();
             
+            // Configurar gestos del Bottom Sheet
             setTimeout(() => {
                 const handle = document.getElementById('drag-handle');
                 let startY = 0;
@@ -912,11 +954,8 @@
                     handle.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, {passive: true});
                     handle.addEventListener('touchend', e => {
                         let endY = e.changedTouches[0].clientY;
-                        if (startY - endY > 30 && !window.sheetExpanded) {
-                            window.toggleSheet(); 
-                        } else if (endY - startY > 30 && window.sheetExpanded) {
-                            window.toggleSheet(); 
-                        }
+                        if (startY - endY > 30 && !window.sheetExpanded) { window.toggleSheet(); } 
+                        else if (endY - startY > 30 && window.sheetExpanded) { window.toggleSheet(); }
                     }, {passive: true});
                 }
             }, 1000);
@@ -927,6 +966,7 @@
                 document.getElementById('name-modal').classList.remove('hidden');
             } else {
                 window.requestWakeLock();
+                try { document.getElementById('background-audio').play().catch(()=>{}); } catch(e){}
                 if (isStandalone) checkPermissions(); 
             }
         }
@@ -944,15 +984,114 @@
                 // Desbloquea el audio en iOS al interactuar con el botón
                 if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 if(audioCtx.state === 'suspended') audioCtx.resume();
+                
+                // Forzar audio silencioso
+                try { 
+                    const bgAudio = document.getElementById('background-audio');
+                    bgAudio.play().catch(e => console.log("Audio play prevented")); 
+                } catch(e){}
 
                 if (window.updatePilotLocation && window.userLat && window.userLng) {
-                    window.updatePilotLocation(window.userLat, window.userLng, 'activo');
+                    window.updatePilotLocation(window.userLat, window.userLng, window.userSpeed, 'activo', '');
                 }
             } else {
                 alert("Por favor ingresa un nombre válido.");
             }
         }
 
+        // ==========================================
+        // LÓGICA DE S.O.S CON MOTIVOS Y CONTADOR
+        // ==========================================
+        function openSosOptions() {
+            if (!window.userLat || !window.userLng) { showToast("Error", "GPS no disponible para S.O.S"); return; }
+            document.getElementById('sos-options-modal').classList.remove('hidden');
+        }
+        function closeSosOptions() { document.getElementById('sos-options-modal').classList.add('hidden'); }
+
+        function startSosCountdown(motivo) {
+            currentSosMotivo = motivo;
+            document.getElementById('sos-options-modal').classList.add('hidden');
+            document.getElementById('sos-countdown-modal').classList.remove('hidden');
+            document.getElementById('sos-motivo-texto').innerText = motivo;
+            
+            let timeLeft = 5;
+            document.getElementById('sos-pre-timer').innerText = timeLeft;
+            const circle = document.getElementById('countdown-circle');
+            circle.style.strokeDashoffset = "0";
+
+            clearInterval(sosCountdownInterval);
+            sosCountdownInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('sos-pre-timer').innerText = timeLeft;
+                // Animar círculo (283 es la circunferencia aprox)
+                circle.style.strokeDashoffset = (283 - (283 * (timeLeft / 5))).toString();
+                
+                if(timeLeft <= 0) {
+                    clearInterval(sosCountdownInterval);
+                    executeFinalSOS(currentSosMotivo);
+                }
+            }, 1000);
+        }
+
+        function cancelSosCountdown() {
+            clearInterval(sosCountdownInterval);
+            document.getElementById('sos-countdown-modal').classList.add('hidden');
+            showToast("Cancelado", "La alerta no fue enviada.");
+        }
+
+        async function executeFinalSOS(motivo) {
+            document.getElementById('sos-countdown-modal').classList.add('hidden');
+            document.getElementById('sos-active-modal').classList.remove('hidden');
+            
+            // 1. Actualizar estado en Firebase a SOS con el motivo
+            if (window.updatePilotLocation) {
+                window.updatePilotLocation(window.userLat, window.userLng, window.userSpeed, 'SOS', motivo);
+            }
+
+            // 2. Enviar Correo Vía Google Apps Script
+            const sosPayload = {
+                type: "SOS",
+                piloto: localStorage.getItem('imade_pilot_name') || 'Anónimo',
+                motivo: motivo,
+                lat: window.userLat,
+                lng: window.userLng,
+                velocidad: window.userSpeed,
+                fecha: new Date().toLocaleString('es-GT')
+            };
+
+            try {
+                // Usamos no-cors porque GAS hace una redirección extraña, pero sí envía el correo.
+                fetch(GOOGLE_APP_SCRIPT_URL, { 
+                    method: 'POST', 
+                    mode: 'no-cors', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(sosPayload) 
+                });
+            } catch (err) { console.log("Error mandando POST de SOS"); }
+
+            // 3. Iniciar contador de tiempo activo en pantalla
+            let secondsActive = 0;
+            clearInterval(activeSosTimerInterval);
+            activeSosTimerInterval = setInterval(() => {
+                secondsActive++;
+                let m = Math.floor(secondsActive / 60).toString().padStart(2, '0');
+                let s = (secondsActive % 60).toString().padStart(2, '0');
+                document.getElementById('sos-active-timer').innerText = `${m}:${s}`;
+            }, 1000);
+        }
+
+        function deactivateSOS() {
+            clearInterval(activeSosTimerInterval);
+            document.getElementById('sos-active-modal').classList.add('hidden');
+            if (window.updatePilotLocation && window.userLat && window.userLng) {
+                window.updatePilotLocation(window.userLat, window.userLng, window.userSpeed, 'activo', '');
+            }
+            showToast("S.O.S Finalizado", "Tu estado volvió a normal", "fa-check-circle");
+        }
+
+        // =========================================================================
+        // UTILIDADES DE TABS Y VISTAS
+        // =========================================================================
         function switchTab(tabId) {
             ['home', 'search', 'register', 'map', 'pilots'].forEach(id => {
                 document.getElementById(`screen-${id}`).classList.add('hidden');
@@ -1015,14 +1154,6 @@
             }
         };
 
-        window.centerPilotsMap = function() {
-            if (pilotsMap && window.userLat && window.userLng) {
-                pilotsMap.flyTo([window.userLat, window.userLng], 14, { animate: true, duration: 1 });
-            } else {
-                showToast("Buscando...", "Aún no tenemos tu ubicación GPS.", "fa-location-crosshairs");
-            }
-        }
-
         window.calculateDistance = function(lat1, lon1, lat2, lon2) {
             if(!lat1 || !lon1 || !lat2 || !lon2) return null;
             const R = 6371; 
@@ -1031,35 +1162,6 @@
             const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
             return R * c;
-        }
-
-        let mySosInterval;
-        function triggerSOS() {
-            if (!window.userLat || !window.userLng) { showToast("Error", "GPS no disponible para S.O.S"); return; }
-            
-            if (window.updatePilotLocation) window.updatePilotLocation(window.userLat, window.userLng, 'SOS');
-            
-            document.getElementById('sos-active-modal').classList.remove('hidden');
-            let timeLeft = 30;
-            document.getElementById('sos-timer').innerText = timeLeft;
-            
-            clearInterval(mySosInterval);
-            mySosInterval = setInterval(() => {
-                timeLeft--;
-                document.getElementById('sos-timer').innerText = timeLeft;
-                if(timeLeft <= 0) {
-                    cancelSOS();
-                }
-            }, 1000);
-        }
-
-        function cancelSOS() {
-            clearInterval(mySosInterval);
-            document.getElementById('sos-active-modal').classList.add('hidden');
-            if (window.updatePilotLocation && window.userLat && window.userLng) {
-                window.updatePilotLocation(window.userLat, window.userLng, 'activo');
-            }
-            showToast("S.O.S Finalizado", "Tu estado volvió a activo", "fa-check-circle");
         }
 
         function closeMap() {
@@ -1077,17 +1179,22 @@
         }
         function closeGpsModal() { document.getElementById('gps-modal').classList.add('hidden'); }
 
+        // =========================================================================
+        // GPS Y SEGUIMIENTO DE UBICACIÓN
+        // =========================================================================
         function requestLocation() {
             if ("geolocation" in navigator) {
                 navigator.geolocation.watchPosition(
                     (position) => {
                         window.userLat = position.coords.latitude;
                         window.userLng = position.coords.longitude;
+                        // Obtener velocidad nativa del GPS (viene en m/s, multiplicar por 3.6 para km/h)
+                        window.userSpeed = position.coords.speed ? Math.round(position.coords.speed * 3.6) : 0;
                         
                         const homeStatus = document.getElementById('home-gps-status');
                         const homeIcon = document.getElementById('home-gps-icon');
                         if (homeStatus && homeIcon) {
-                            homeStatus.innerHTML = `<span class="text-green-600">Activo</span>`;
+                            homeStatus.innerHTML = `<span class="text-green-600">${window.userSpeed} km/h</span>`;
                             homeStatus.className = `text-[11px] font-bold text-gray-800`;
                             homeIcon.className = `w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors bg-green-50 text-green-500`;
                             homeIcon.innerHTML = `<i class="fa-solid fa-satellite-dish text-sm"></i>`;
@@ -1101,7 +1208,7 @@
                         }
 
                         if(window.updatePilotLocation && document.getElementById('sos-active-modal').classList.contains('hidden')){
-                            window.updatePilotLocation(window.userLat, window.userLng, 'activo');
+                            window.updatePilotLocation(window.userLat, window.userLng, window.userSpeed, 'activo', '');
                         }
 
                         if (window.renderPilotsMap && !document.getElementById('screen-pilots').classList.contains('hidden')) {
@@ -1133,14 +1240,17 @@
                             pilotIcon.className = `w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors bg-red-50 text-red-500`;
                         }
 
-                        if(window.updatePilotLocation) window.updatePilotLocation(0, 0, 'inactivo');
+                        if(window.updatePilotLocation) window.updatePilotLocation(0, 0, 0, 'inactivo', '');
                         openGpsModal();
                     },
-                    { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
+                    { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
                 );
             }
         }
 
+        // ==========================================
+        // MAPA DE PILOTOS: CAMIONES, VELOCIDAD Y RASTRO
+        // ==========================================
         window.renderPilotsMap = function(pilots = []) {
             let startLat = window.userLat || 14.6349;
             let startLng = window.userLng || -90.5069;
@@ -1151,7 +1261,6 @@
             }
 
             let displayPilots = [...pilots]; 
-
             let myId = window.currentUser ? window.currentUser.uid : 'local-user';
             let iAmInList = displayPilots.find(p => p.id === myId);
             
@@ -1162,6 +1271,7 @@
                     name: (localStorage.getItem('imade_pilot_name') || "Piloto") + " (Tú)",
                     lat: window.userLat,
                     lng: window.userLng,
+                    speed: window.userSpeed,
                     status: isMySos ? 'SOS' : 'activo'
                 });
             }
@@ -1170,28 +1280,54 @@
             for (const id in pilotMarkers) {
                 if (!currentIds.includes(id)) {
                     pilotsMap.removeLayer(pilotMarkers[id]);
+                    if(window.pilotPolylines[id]) { pilotsMap.removeLayer(window.pilotPolylines[id]); }
                     delete pilotMarkers[id];
+                    delete window.pilotTrails[id];
+                    delete window.pilotPolylines[id];
                 }
             }
 
             displayPilots.forEach(pilot => {
                 if (pilot.status === 'inactivo' || pilot.lat === 0) return; 
 
-                const isSOS = pilot.status === 'SOS';
-                const color = isSOS ? '#ef4444' : '#36a8e1';
-                const pulseClass = isSOS ? 'sos-danger-blink' : '';
-                const iconCls = isSOS ? 'fa-triangle-exclamation' : 'fa-truck-fast';
+                // --- 1. ACTUALIZAR RASTRO (TRAIL) ---
+                if(!window.pilotTrails[pilot.id]) { window.pilotTrails[pilot.id] = []; }
+                
+                // Evitar guardar puntos repetidos si no se ha movido
+                let lastPoint = window.pilotTrails[pilot.id][window.pilotTrails[pilot.id].length - 1];
+                if (!lastPoint || lastPoint[0] !== pilot.lat || lastPoint[1] !== pilot.lng) {
+                    window.pilotTrails[pilot.id].push([pilot.lat, pilot.lng]);
+                    // Mantener solo los últimos 50 puntos para no saturar memoria
+                    if(window.pilotTrails[pilot.id].length > 50) window.pilotTrails[pilot.id].shift(); 
+                }
 
+                // Dibujar línea del rastro
+                const lineColor = pilot.status === 'SOS' ? '#ef4444' : '#36a8e1';
+                if(!window.pilotPolylines[pilot.id]) {
+                    window.pilotPolylines[pilot.id] = L.polyline(window.pilotTrails[pilot.id], {color: lineColor, weight: 4, opacity: 0.5}).addTo(pilotsMap);
+                } else {
+                    window.pilotPolylines[pilot.id].setLatLngs(window.pilotTrails[pilot.id]);
+                    window.pilotPolylines[pilot.id].setStyle({color: lineColor});
+                }
+
+                // --- 2. DIBUJAR CAMIÓN Y VELOCIDAD ---
+                const isSOS = pilot.status === 'SOS';
+                const color = isSOS ? '#ef4444' : '#22387a';
+                const pulseClass = isSOS ? 'sos-danger-blink' : '';
+                const vel = pilot.speed || 0;
+
+                // Diseño HTML del marcador: Camión + Etiqueta de Velocidad + Nombre
                 const iconHtml = `
-                    <div class="${pulseClass}" style='background-color:${color}; width:30px; height:30px; border-radius:50%; border:3px solid white; box-shadow:0 4px 10px rgba(0,0,0,0.4); display:flex; justify-content:center; align-items:center; transition: all 0.3s;'>
-                        <i class='fa-solid ${iconCls}' style='color:white; font-size:12px;'></i>
+                    <div class="${pulseClass}" style='background-color:${color}; width:38px; height:38px; border-radius:10px; border:2px solid white; box-shadow:0 4px 10px rgba(0,0,0,0.4); display:flex; justify-content:center; align-items:center; transition: all 0.3s; position:relative;'>
+                        <i class='fa-solid fa-truck' style='color:white; font-size:16px;'></i>
+                        <div style='position:absolute; -bottom:10px; right:-10px; background:#10b981; color:white; font-size:9px; font-weight:900; padding:2px 4px; border-radius:4px; border:1px solid white;'>${vel}</div>
                     </div>
                     <div style="background: white; font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 10px; margin-top: 5px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.15); white-space: nowrap; transform: translateX(-25%); border: 1px solid #f1f5f9; color: #1e293b; position:relative; z-index:999;">
-                        ${pilot.name} ${isSOS ? '<span style="color:red; animation: ping 1s infinite;">🚨</span>' : ''}
+                        ${pilot.name} ${isSOS ? '🚨' : ''}
                     </div>
                 `;
 
-                const icon = L.divIcon({ className: 'custom-div-icon', html: iconHtml, iconSize: [30, 30], iconAnchor: [15, 15] });
+                const icon = L.divIcon({ className: 'custom-div-icon', html: iconHtml, iconSize: [38, 38], iconAnchor: [19, 19] });
 
                 if (pilotMarkers[pilot.id]) {
                     pilotMarkers[pilot.id].setLatLng([pilot.lat, pilot.lng]);
@@ -1201,7 +1337,18 @@
                 }
             });
         }
+        
+        window.centerPilotsMap = function() {
+            if (pilotsMap && window.userLat && window.userLng) {
+                pilotsMap.flyTo([window.userLat, window.userLng], 14, { animate: true, duration: 1 });
+            } else {
+                showToast("Buscando...", "Aún no tenemos tu ubicación GPS.", "fa-location-crosshairs");
+            }
+        }
 
+        // =========================================================================
+        // DIRECTORIO, BÚSQUEDA Y MAPA DE RUTAS
+        // =========================================================================
         function setupSearchInput() {
             const input = document.getElementById('search-input');
             const clearBtn = document.getElementById('clear-search-btn');
@@ -1228,7 +1375,7 @@
         function loadClients() {
             const stored = localStorage.getItem('app_clientes_imade_v3');
             if (stored) clients = JSON.parse(stored);
-            else { clients = [...mockData]; saveToLocalStorage(); }
+            else { clients = []; saveToLocalStorage(); }
             updateClientCount();
         }
 
@@ -1282,7 +1429,8 @@
         }
 
         async function syncData() {
-            const icon = document.querySelector('#btn-sync i'); icon.classList.add('fa-spin');
+            const icon = document.querySelector('#btn-sync-icon'); 
+            if(icon) icon.classList.add('fa-spin');
             try {
                 const response = await fetch(GOOGLE_APP_SCRIPT_URL);
                 const data = await response.json();
@@ -1291,8 +1439,10 @@
                     if (!document.getElementById('screen-search').classList.contains('hidden')) filterClients(); 
                     showToast("Sincronizado correctamente", `<strong>${data.length}</strong> clientes en la base`, "fa-cloud-arrow-down");
                 }
-            } catch (error) { if(event && event.type === 'click') showToast("Sin conexión", "Usando <strong>base local</strong>.", "fa-wifi"); } 
-            finally { icon.classList.remove('fa-spin'); }
+            } catch (error) { 
+                if(event && event.type === 'click') showToast("Sin conexión", "Usando <strong>base local</strong>.", "fa-wifi"); 
+            } 
+            finally { if(icon) icon.classList.remove('fa-spin'); }
         }
 
         function selectClientForRoute(client) {
@@ -1367,9 +1517,16 @@
             routingControl.on('routingerror', function(e) { document.getElementById('route-loader').classList.add('hidden'); showToast("Error", "No se pudo trazar ruta."); });
         }
 
+        function centerMap() {
+            if (map && window.userLat && window.userLng) map.setView([window.userLat, window.userLng], 15);
+        }
+
         function openWaze() { if (!selectedClient) return; window.open(`https://waze.com/ul?ll=${selectedClient.lat},${selectedClient.lng}&navigate=yes`, '_blank'); }
         function openGoogleMaps() { if (!selectedClient) return; let url = (window.userLat && window.userLng) ? `https://www.google.com/maps/dir/?api=1&origin=${window.userLat},${window.userLng}&destination=${selectedClient.lat},${selectedClient.lng}&travelmode=driving` : `https://www.google.com/maps/search/?api=1&query=${selectedClient.lat},${selectedClient.lng}`; window.open(url, '_blank'); }
 
+        // =========================================================================
+        // REGISTRO Y TOAST
+        // =========================================================================
         async function saveClient(e) {
             e.preventDefault();
             
@@ -1391,6 +1548,7 @@
             const btnSave = document.getElementById('btn-save'); btnSave.disabled = true; btnSave.innerHTML = '<div class="loader mr-2 border-white border-t-transparent w-5 h-5 border-2"></div> Subiendo...';
             
             const newClient = {
+                type: "REGISTRO", 
                 piloto: document.getElementById('reg-pilot').value,
                 nombreCliente: nombreStr,
                 codigoCliente: codigoStr,
