@@ -98,30 +98,34 @@
 
     <script>
         // =====================================================================
-        // SITEMA DE AUTO-ACTUALIZACIÓN PARA PWAs (VERSIÓN 1.0.12)
+        // SITEMA DE AUTO-ACTUALIZACIÓN PARA PWAs (VERSIÓN 1.0.13 - MODO NUCLEAR)
         // =====================================================================
-        const APP_VERSION = "1.0.12"; 
+        const APP_VERSION = "1.0.13"; 
         const currentVersion = localStorage.getItem('imade_app_version');
         
         if (currentVersion !== APP_VERSION) {
-            console.log("Nueva versión detectada. Limpiando caché...");
+            console.log("Nueva versión detectada. Aplicando limpieza extrema...");
             localStorage.setItem('imade_app_version', APP_VERSION);
             
-            // Borrar Service Workers viejos
+            // 1. Borrar Service Workers viejos
             if ('serviceWorker' in navigator) {
                 try {
                     navigator.serviceWorker.getRegistrations().then(function(registrations) {
                         for(let registration of registrations) { registration.unregister(); }
-                    }).catch(e => console.warn("SW getRegistrations error:", e));
-                } catch(e) { console.warn("SW API error:", e); }
+                    }).catch(e => console.warn("SW error:", e));
+                } catch(e) {}
             }
+            // 2. Borrar todas las cachés
             if ('caches' in window) {
                 caches.keys().then(function(names) {
                     for (let name of names) caches.delete(name);
                 });
             }
-            // Forzar recarga diferida para que el borrado tenga efecto
-            setTimeout(() => { window.location.reload(true); }, 500);
+            // 3. Forzar recarga modificando la URL para evitar caché del navegador
+            setTimeout(() => { 
+                const cleanUrl = window.location.href.split('?')[0];
+                window.location.href = cleanUrl + '?v=' + new Date().getTime(); 
+            }, 600);
         }
     </script>
 </head>
@@ -137,7 +141,7 @@
     <div id="install-screen" class="fixed inset-0 z-[99999] bg-white flex flex-col items-center justify-center p-6 text-center hidden">
         <img src="app.jpg" alt="RutasApp" class="w-32 h-32 rounded-3xl shadow-2xl mb-6 object-cover" onerror="this.src='https://cdn-icons-png.flaticon.com/512/854/854878.png'">
         <h2 class="text-3xl font-black text-imade-dark mb-3">Instala RutasApp</h2>
-        <p class="text-gray-500 mb-8 font-medium px-4 leading-relaxed text-sm">Para continuar y garantizar que el GPS funcione en tiempo real (Versión 1.0.11), instala la aplicación dando clic en el botón de abajo.</p>
+        <p class="text-gray-500 mb-8 font-medium px-4 leading-relaxed text-sm">Para continuar y garantizar que el GPS funcione en tiempo real (Versión 1.0.13), instala la aplicación dando clic en el botón de abajo.</p>
         
         <button id="btn-install" class="w-full max-w-xs bg-imade-light text-white font-black py-4 rounded-2xl shadow-[0_10px_20px_rgba(54,168,225,0.3)] active:scale-95 transition-transform text-lg flex items-center justify-center">
             <i class="fa-solid fa-download mr-3"></i> Instalar Ahora
@@ -478,7 +482,8 @@
             <div id="screen-home" class="screen w-full h-full flex flex-col px-5 py-3 overflow-hidden">
                 
                 <div class="flex flex-col items-center justify-center mt-1 mb-3">
-                    <img src="logo.jpg" alt="Grupo Imade" class="h-16 w-16 rounded-2xl object-cover mb-3 shadow-md border border-gray-200" onerror="this.src='https://cdn-icons-png.flaticon.com/512/854/854878.png'">
+                    <!-- ACTUALIZADO A LOGO.PNG PARA INTERIOR DE LA APP -->
+                    <img src="logo.png" alt="Grupo Imade" class="h-16 w-16 rounded-2xl object-cover mb-3 shadow-md border border-gray-200" onerror="this.src='https://cdn-icons-png.flaticon.com/512/854/854878.png'">
                     <h2 class="text-2xl font-black text-imade-dark text-center tracking-tight">¡Bienvenido!</h2>
                 </div>
                 
@@ -534,7 +539,7 @@
                         <i class="fa-solid fa-laptop-code text-imade-light"></i>
                         <span>Creado por <strong>Depto. de IT</strong></span>
                     </div>
-                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest" id="app-version-text">Versión 1.0.12</p>
+                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest" id="app-version-text">Versión 1.0.13</p>
                 </div>
             </div>
 
@@ -780,11 +785,13 @@
         if (!isStandalone) {
             document.getElementById('app').classList.add('hidden');
             document.getElementById('install-screen').classList.remove('hidden');
+            
+            // FORZAR SIEMPRE LA VISIBILIDAD DEL BOTÓN DE INSTALAR
+            btnInstall.classList.remove('hidden');
 
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 deferredPrompt = e;
-                btnInstall.classList.remove('hidden');
             });
 
             btnInstall.addEventListener('click', async () => {
@@ -799,6 +806,7 @@
                     }
                     deferredPrompt = null;
                 } else {
+                    // Si no se soporta prompt nativo, mostramos instrucciones visuales
                     btnInstall.classList.add('hidden');
                     installInstructions.classList.remove('hidden');
                     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -1530,7 +1538,7 @@
         }
 
         // =========================================================================
-        // MAPA Y TRAZADO DE RUTA (CON FALLBACK SEGURO)
+        // MAPA Y TRAZADO DE RUTA (CON PARSE FLOAT PARA EVITAR ERRORES)
         // =========================================================================
         function initMap() {
             let startLat = window.userLat || 14.6349; let startLng = window.userLng || -90.5069;
@@ -1542,13 +1550,19 @@
             document.getElementById('route-loader').classList.remove('hidden');
             if (routingControl) map.removeControl(routingControl);
             
+            // ASEGURAMOS QUE LAS COORDENADAS SEAN NÚMEROS Y NO TEXTO
+            const destLat = parseFloat(selectedClient.lat);
+            const destLng = parseFloat(selectedClient.lng);
+            const sLat = parseFloat(startLat);
+            const sLng = parseFloat(startLng);
+            
             const userIcon = L.divIcon({ className: 'custom-div-icon', html: "<div style='background-color:#36a8e1; width:20px; height:20px; border-radius:50%; border:3px solid white; box-shadow:0 3px 8px rgba(0,0,0,0.3);'></div>", iconSize: [20, 20], iconAnchor: [10, 10] });
             const clientIcon = L.divIcon({ className: 'custom-div-icon', html: "<div style='background-color:#22387a; width:34px; height:34px; border-radius:50%; border:3px solid white; box-shadow:0 4px 10px rgba(0,0,0,0.4); display:flex; justify-content:center; align-items:center;'><i class='fa-solid fa-store' style='color:white; font-size:14px;'></i></div>", iconSize: [34, 34], iconAnchor: [17, 17] });
             
             routingControl = L.Routing.control({ 
-                waypoints: [ L.latLng(startLat, startLng), L.latLng(selectedClient.lat, selectedClient.lng) ], 
-                router: L.Routing.osrmv1({ 
-                    serviceUrl: 'https://routing.openstreetmap.de/routed-car/route/v1', // Servidor de rutas de OSM (Más estable y rápido)
+                waypoints: [ L.latLng(sLat, sLng), L.latLng(destLat, destLng) ], 
+                router: L.Routing.osrmv1({
+                    serviceUrl: 'https://router.project-osrm.org/route/v1', // Servidor por defecto (más estable para demos)
                     language: 'es', 
                     profile: 'driving' 
                 }), 
@@ -1564,16 +1578,16 @@
                 document.getElementById('route-loader').classList.add('hidden'); 
             });
             
-            // Si el servidor de OSRM falla (bloqueo por muchas peticiones o caída), hacemos un fallback de una línea recta
+            // Si el servidor de OSRM falla, hacemos un fallback de una línea recta
             routingControl.on('routingerror', function(e) { 
                 document.getElementById('route-loader').classList.add('hidden'); 
-                showToast("Aviso Servidor", "Usando línea directa por saturación del mapa.", "fa-route", "text-orange-500", "bg-orange-50 border-orange-200"); 
+                showToast("Aviso Servidor", "No se pudo trazar la ruta en carretera. Usando línea directa.", "fa-route", "text-orange-500", "bg-orange-50 border-orange-200"); 
                 
                 if(window.fallbackRoute) map.removeLayer(window.fallbackRoute);
-                window.fallbackRoute = L.polyline([[startLat, startLng], [selectedClient.lat, selectedClient.lng]], {color: '#ef4444', weight: 4, dashArray: '10, 10'}).addTo(map);
+                window.fallbackRoute = L.polyline([[sLat, sLng], [destLat, destLng]], {color: '#ef4444', weight: 4, dashArray: '10, 10'}).addTo(map);
                 
-                L.marker([startLat, startLng], { icon: userIcon }).addTo(map);
-                L.marker([selectedClient.lat, selectedClient.lng], { icon: clientIcon }).addTo(map);
+                L.marker([sLat, sLng], { icon: userIcon }).addTo(map);
+                L.marker([destLat, destLng], { icon: clientIcon }).addTo(map);
                 map.fitBounds(window.fallbackRoute.getBounds(), {padding: [50,50]});
             });
         }
